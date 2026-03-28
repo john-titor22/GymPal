@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRoutineStore } from '../../store/routineStore';
 import { Button } from '../../components/ui/Button';
+import { BodyDiagram } from '../../components/ui/BodyDiagram';
 import { EXERCISE_LIBRARY, MUSCLE_OPTIONS, EQUIPMENT_OPTIONS } from '../../data/exerciseLibrary';
 
 const MUSCLE_LABEL = {
@@ -73,7 +74,7 @@ export function RoutineDetailPage() {
 
       {/* Summary card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-4 flex items-center justify-between">
-        <div>
+        <div className="flex-1">
           <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Summary</p>
           <div className="flex gap-6 mt-2">
             <div>
@@ -85,14 +86,20 @@ export function RoutineDetailPage() {
               <p className="text-xs text-gray-400">Total Sets</p>
             </div>
           </div>
+          {currentRoutine.exercises.length > 0 && (
+            <button
+              onClick={() => navigate('/session', { state: { routineId: id, routineName: currentRoutine.name } })}
+              className="mt-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold text-sm px-5 py-2 rounded-xl transition"
+            >
+              Start Workout
+            </button>
+          )}
         </div>
         {currentRoutine.exercises.length > 0 && (
-          <button
-            onClick={() => navigate('/session', { state: { routineId: id, routineName: currentRoutine.name } })}
-            className="bg-primary-600 hover:bg-primary-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition"
-          >
-            Start
-          </button>
+          <BodyDiagram
+            muscleGroup={currentRoutine.exercises[0]?.muscleGroup || 'OTHER'}
+            size="md"
+          />
         )}
       </div>
 
@@ -196,14 +203,14 @@ export function RoutineDetailPage() {
                   key={ex.name}
                   disabled={isSubmitting}
                   onClick={() => handlePickExercise(ex)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition text-left"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 text-xs font-bold text-gray-400">
-                    {ex.muscleGroup.slice(0, 2)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{ex.name}</p>
-                    <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>
+                  <div className="flex items-center gap-3">
+                    <BodyDiagram muscleGroup={ex.muscleGroup} size="sm" />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{ex.name}</p>
+                      <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>
+                    </div>
                   </div>
                 </button>
               ))}

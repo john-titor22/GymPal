@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { EXERCISE_LIBRARY, MUSCLE_OPTIONS, EQUIPMENT_OPTIONS } from '../../data/exerciseLibrary';
+import { BodyDiagram } from '../../components/ui/BodyDiagram';
 
 const MUSCLE_LABEL = {
   CHEST: 'Chest', BACK: 'Back', SHOULDERS: 'Shoulders', BICEPS: 'Biceps',
@@ -49,19 +50,17 @@ export function ExercisesPage() {
         </button>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex items-start gap-4">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold shrink-0 ${MUSCLE_COLOR[selected.muscleGroup]}`}>
-              {selected.muscleGroup.slice(0, 2)}
-            </div>
+          <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-xl font-bold text-gray-900">{selected.name}</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                <span className="font-medium">Equipment:</span> {selected.equipment || 'Bodyweight'}
+              <p className="text-sm text-gray-500 mt-2">
+                <span className="font-medium text-gray-700">Equipment:</span> {selected.equipment || 'Bodyweight'}
               </p>
-              <p className="text-sm text-gray-500">
-                <span className="font-medium">Primary Muscle:</span> {MUSCLE_LABEL[selected.muscleGroup]}
+              <p className="text-sm text-gray-500 mt-0.5">
+                <span className="font-medium text-gray-700">Primary Muscle:</span> {MUSCLE_LABEL[selected.muscleGroup]}
               </p>
             </div>
+            <BodyDiagram muscleGroup={selected.muscleGroup} size="lg" />
           </div>
         </div>
 
