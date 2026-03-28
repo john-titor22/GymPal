@@ -43,25 +43,23 @@ export function HistoryPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center py-16 gap-3 text-center">
           <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center text-3xl">📭</div>
           <p className="font-semibold text-gray-900">No workouts yet</p>
-          <p className="text-sm text-gray-500">Start a workout from the dashboard!</p>
+          <p className="text-sm text-gray-500">Start a workout from the home screen!</p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
           {sessions.map((s) => (
             <div key={s.id} className="flex items-center justify-between px-4 py-4">
               <div>
-                <p className="font-semibold text-gray-900">{s.workoutDay?.name}</p>
+                <p className="font-semibold text-gray-900">{s.routine?.name ?? 'Workout'}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {new Date(s.startedAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   {s.completedAt && ` · ${Math.round((new Date(s.completedAt) - new Date(s.startedAt)) / 60000)} min`}
+                  {` · ${s._count?.exerciseLogs ?? 0} sets`}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-400">{s._count?.exerciseLogs ?? 0} sets</span>
-                <Badge color={s.completedAt ? 'green' : 'yellow'}>
-                  {s.completedAt ? 'Done' : 'Incomplete'}
-                </Badge>
-              </div>
+              <Badge color={s.completedAt ? 'green' : 'yellow'}>
+                {s.completedAt ? 'Done' : 'Incomplete'}
+              </Badge>
             </div>
           ))}
         </div>

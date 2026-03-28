@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 export function WorkoutSessionPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { workoutDayId, dayName } = location.state || {};
+  const { routineId, routineName } = location.state || {};
   const { activeSession, startSession, logSet, completeSession, clearSession } = useSessionStore();
 
   const [isStarting, setIsStarting] = useState(false);
@@ -16,10 +16,10 @@ export function WorkoutSessionPage() {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (!workoutDayId) { navigate('/dashboard'); return; }
+    if (!routineId) { navigate('/dashboard'); return; }
     init();
     return () => clearInterval(timerRef.current);
-  }, [workoutDayId]);
+  }, [routineId]);
 
   useEffect(() => {
     if (activeSession) {
@@ -31,7 +31,7 @@ export function WorkoutSessionPage() {
   async function init() {
     if (activeSession) return;
     setIsStarting(true);
-    try { await startSession(workoutDayId); }
+    try { await startSession(routineId); }
     finally { setIsStarting(false); }
   }
 
@@ -79,14 +79,14 @@ export function WorkoutSessionPage() {
     );
   }
 
-  const exercises = activeSession.workoutDay.exercises;
+  const exercises = activeSession.routine.exercises;
 
   return (
     <div className="space-y-4 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{activeSession.workoutDay.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{activeSession.routine.name}</h1>
           <p className="text-sm text-gray-400 mt-0.5">{exercises.length} exercises</p>
         </div>
         <div className="text-right">
@@ -107,22 +107,22 @@ export function WorkoutSessionPage() {
                 <div>
                   <h3 className="font-bold text-gray-900">{exercise.name}</h3>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {exercise.muscleGroup.replace('_', ' ')} · Target: {exercise.sets}×{exercise.reps}
+                    Target: {exercise.sets}×{exercise.reps}
                     {exercise.weight ? ` @ ${exercise.weight}kg` : ''}
+                    {exercise.equipment ? ` · ${exercise.equipment}` : ''}
                   </p>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${allDone ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>
-                  {logs.length}/{exercise.sets} sets
+                  {logs.length}/{exercise.sets}
                 </span>
               </div>
 
               {/* Set rows */}
               <div className="px-4 py-3 space-y-2">
-                {/* Column headers */}
                 <div className="grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 px-1">
-                  <span className="text-xs font-medium text-gray-400">Set</span>
-                  <span className="text-xs font-medium text-gray-400">Reps</span>
-                  <span className="text-xs font-medium text-gray-400">Weight (kg)</span>
+                  <span className="text-xs font-medium text-gray-400">SET</span>
+                  <span className="text-xs font-medium text-gray-400">KG</span>
+                  <span className="text-xs font-medium text-gray-400">REPS</span>
                   <span />
                 </div>
 
@@ -135,17 +135,17 @@ export function WorkoutSessionPage() {
                       <input
                         type="number"
                         className="input text-sm py-2"
-                        placeholder={String(exercise.reps)}
-                        value={logged ? logged.reps : getInput(exercise.id, setNum, 'reps')}
-                        onChange={(e) => !logged && setInput(exercise.id, setNum, 'reps', e.target.value)}
+                        placeholder={exercise.weight ? String(exercise.weight) : '—'}
+                        value={logged ? (logged.weight ?? '') : getInput(exercise.id, setNum, 'weight')}
+                        onChange={(e) => !logged && setInput(exercise.id, setNum, 'weight', e.target.value)}
                         readOnly={!!logged}
                       />
                       <input
                         type="number"
                         className="input text-sm py-2"
-                        placeholder={exercise.weight ? String(exercise.weight) : '—'}
-                        value={logged ? (logged.weight ?? '') : getInput(exercise.id, setNum, 'weight')}
-                        onChange={(e) => !logged && setInput(exercise.id, setNum, 'weight', e.target.value)}
+                        placeholder={String(exercise.reps)}
+                        value={logged ? logged.reps : getInput(exercise.id, setNum, 'reps')}
+                        onChange={(e) => !logged && setInput(exercise.id, setNum, 'reps', e.target.value)}
                         readOnly={!!logged}
                       />
                       {logged ? (
@@ -180,18 +180,14 @@ export function WorkoutSessionPage() {
       </div>
 
       {/* Finish bar */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-60 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 md:left-56 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
         <div>
-          <p className="text-sm font-semibold text-gray-900">{dayName}</p>
+          <p className="text-sm font-semibold text-gray-900">{routineName}</p>
           <p className="text-xs text-gray-400">{formatTime(elapsed)} elapsed</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={() => { clearSession(); navigate(-1); }}>
-            Cancel
-          </Button>
-          <Button isLoading={isCompleting} onClick={handleComplete}>
-            Finish Workout
-          </Button>
+          <Button variant="ghost" onClick={() => { clearSession(); navigate(-1); }}>Cancel</Button>
+          <Button isLoading={isCompleting} onClick={handleComplete}>Finish Workout</Button>
         </div>
       </div>
     </div>

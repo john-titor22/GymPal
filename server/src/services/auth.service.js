@@ -5,7 +5,7 @@ const { AppError } = require('../middleware/error.middleware');
 
 function generateAccessToken(user) {
   return jwt.sign(
-    { sub: user.id, role: user.role },
+    { sub: user.id },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN }
   );
@@ -19,6 +19,8 @@ function generateRefreshToken(user) {
   );
 }
 
+const USER_SELECT = { id: true, name: true, email: true, bio: true };
+
 async function register({ name, email, password }) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new AppError('Email already in use', 409);
@@ -26,12 +28,11 @@ async function register({ name, email, password }) {
   const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: { name, email, password: hashed },
-    select: { id: true, name: true, email: true, role: true, fitnessGoal: true },
+    select: USER_SELECT,
   });
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
-
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await prisma.refreshToken.create({ data: { token: refreshToken, userId: user.id, expiresAt } });
 
@@ -47,7 +48,6 @@ async function login({ email, password }) {
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
-
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await prisma.refreshToken.create({ data: { token: refreshToken, userId: user.id, expiresAt } });
 
@@ -72,10 +72,7 @@ async function refresh(token) {
 
   await prisma.refreshToken.delete({ where: { token } });
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.sub },
-    select: { id: true, role: true },
-  });
+  const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true } });
   if (!user) throw new AppError('User not found', 401);
 
   const accessToken = generateAccessToken(user);

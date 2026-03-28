@@ -2,22 +2,11 @@ import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/auth.api';
 import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
-
-const GOALS = [
-  { value: 'MAINTAIN', label: 'Maintain' },
-  { value: 'CUT', label: 'Cut' },
-  { value: 'BULK', label: 'Bulk' },
-];
 
 export function ProfilePage() {
   const { user, setUser } = useAuthStore();
-  const [form, setForm] = useState({
-    name: user?.name || '',
-    weight: user?.weight || '',
-    fitnessGoal: user?.fitnessGoal || 'MAINTAIN',
-  });
+  const [form, setForm] = useState({ name: user?.name || '', bio: user?.bio || '' });
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -25,10 +14,7 @@ export function ProfilePage() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const { data } = await authApi.updateProfile({
-        ...form,
-        weight: form.weight ? Number(form.weight) : undefined,
-      });
+      const { data } = await authApi.updateProfile(form);
       setUser(data);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -63,22 +49,18 @@ export function ProfilePage() {
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
-          <Input
-            label="Body weight (kg)"
-            type="number"
-            min={0}
-            placeholder="Optional"
-            value={form.weight}
-            onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
-          />
-          <Select
-            label="Fitness goal"
-            options={GOALS}
-            value={form.fitnessGoal}
-            onChange={(e) => setForm((f) => ({ ...f, fitnessGoal: e.target.value }))}
-          />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">Bio</label>
+            <textarea
+              className="input resize-none"
+              rows={3}
+              placeholder="Describe yourself"
+              value={form.bio}
+              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+            />
+          </div>
           <div className="flex items-center gap-3 pt-1">
-            <Button type="submit" isLoading={isSaving}>Save changes</Button>
+            <Button type="submit" isLoading={isSaving}>Save Changes</Button>
             {saved && (
               <span className="text-sm text-green-600 font-medium flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

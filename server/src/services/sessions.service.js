@@ -1,17 +1,17 @@
 const prisma = require('../lib/prisma');
 const { AppError } = require('../middleware/error.middleware');
 
-async function startSession(userId, workoutDayId) {
-  const day = await prisma.workoutDay.findFirst({
-    where: { id: workoutDayId, program: { userId } },
+async function startSession(userId, routineId) {
+  const routine = await prisma.routine.findFirst({
+    where: { id: routineId, userId },
     include: { exercises: { orderBy: { order: 'asc' } } },
   });
-  if (!day) throw new AppError('Workout day not found', 404);
+  if (!routine) throw new AppError('Routine not found', 404);
 
   const session = await prisma.workoutSession.create({
-    data: { userId, workoutDayId },
+    data: { userId, routineId },
     include: {
-      workoutDay: { include: { exercises: { orderBy: { order: 'asc' } } } },
+      routine: { include: { exercises: { orderBy: { order: 'asc' } } } },
       exerciseLogs: true,
     },
   });
@@ -21,7 +21,6 @@ async function startSession(userId, workoutDayId) {
 async function logSet(userId, sessionId, data) {
   const session = await assertSessionOwner(userId, sessionId);
   if (session.completedAt) throw new AppError('Session already completed', 400);
-
   return prisma.exerciseLog.create({ data: { ...data, sessionId } });
 }
 
@@ -31,7 +30,7 @@ async function completeSession(userId, sessionId, notes) {
     where: { id: sessionId },
     data: { completedAt: new Date(), notes },
     include: {
-      workoutDay: true,
+      routine: true,
       exerciseLogs: { include: { exercise: true } },
     },
   });
@@ -41,7 +40,7 @@ async function getSessionById(userId, sessionId) {
   const session = await prisma.workoutSession.findFirst({
     where: { id: sessionId, userId },
     include: {
-      workoutDay: { include: { exercises: { orderBy: { order: 'asc' } } } },
+      routine: { include: { exercises: { orderBy: { order: 'asc' } } } },
       exerciseLogs: { include: { exercise: true }, orderBy: { createdAt: 'asc' } },
     },
   });
@@ -57,7 +56,7 @@ async function getSessions(userId, cursor, limit = 10) {
     ...(cursor && { cursor: { id: cursor }, skip: 1 }),
     orderBy: { startedAt: 'desc' },
     include: {
-      workoutDay: { select: { id: true, name: true } },
+      routine: { select: { id: true, name: true } },
       _count: { select: { exerciseLogs: true } },
     },
   });
@@ -77,28 +76,23 @@ async function getDashboardData(userId) {
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
 
-  const [activeProgram, recentSessions, weekCount] = await Promise.all([
-    prisma.program.findFirst({
-      where: { userId, isActive: true },
-      include: {
-        workoutDays: {
-          orderBy: { dayOrder: 'asc' },
-          include: { exercises: { orderBy: { order: 'asc' } } },
-        },
-      },
-    }),
+  const [recentSessions, weekCount, totalCount] = await Promise.all([
     prisma.workoutSession.findMany({
       where: { userId },
       take: 5,
       orderBy: { startedAt: 'desc' },
-      include: { workoutDay: { select: { name: true } } },
+      include: {
+        routine: { select: { name: true } },
+        _count: { select: { exerciseLogs: true } },
+      },
     }),
     prisma.workoutSession.count({
       where: { userId, startedAt: { gte: weekAgo }, completedAt: { not: null } },
     }),
+    prisma.workoutSession.count({ where: { userId, completedAt: { not: null } } }),
   ]);
 
-  return { activeProgram, recentSessions, weekCount };
+  return { recentSessions, weekCount, totalCount };
 }
 
 async function assertSessionOwner(userId, sessionId) {

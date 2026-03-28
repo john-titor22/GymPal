@@ -7,8 +7,9 @@ import { LandingPage } from './pages/landing/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
-import { ProgramsPage } from './pages/programs/ProgramsPage';
-import { ProgramDetailPage } from './pages/programs/ProgramDetailPage';
+import { RoutinesPage } from './pages/routines/RoutinesPage';
+import { RoutineDetailPage } from './pages/routines/RoutineDetailPage';
+import { ExercisesPage } from './pages/exercises/ExercisesPage';
 import { WorkoutSessionPage } from './pages/session/WorkoutSessionPage';
 import { HistoryPage } from './pages/history/HistoryPage';
 import { ProfilePage } from './pages/profile/ProfilePage';
@@ -18,7 +19,7 @@ function PrivateRoute({ children }) {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-10 h-10 border-2 border-primary-600 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -37,18 +38,15 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing */}
         <Route path="/" element={<LandingPage />} />
-
-        {/* Auth */}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-        {/* Protected app */}
         <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/programs" element={<ProgramsPage />} />
-          <Route path="/programs/:id" element={<ProgramDetailPage />} />
+          <Route path="/routines" element={<RoutinesPage />} />
+          <Route path="/routines/:id" element={<RoutineDetailPage />} />
+          <Route path="/exercises" element={<ExercisesPage />} />
           <Route path="/session" element={<WorkoutSessionPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/profile" element={<ProfilePage />} />

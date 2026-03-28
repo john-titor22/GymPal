@@ -3,8 +3,6 @@ import { sessionsApi } from '../api/sessions.api';
 
 export const useSessionStore = create((set) => ({
   activeSession: null,
-  sessions: [],
-  nextCursor: null,
   dashboard: null,
   isLoading: false,
 
@@ -18,8 +16,8 @@ export const useSessionStore = create((set) => ({
     }
   },
 
-  startSession: async (workoutDayId) => {
-    const { data: session } = await sessionsApi.start(workoutDayId);
+  startSession: async (routineId) => {
+    const { data: session } = await sessionsApi.start(routineId);
     set({ activeSession: session });
     return session;
   },
