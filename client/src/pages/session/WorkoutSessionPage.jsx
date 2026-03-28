@@ -16,10 +16,7 @@ export function WorkoutSessionPage() {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (!workoutDayId) {
-      navigate('/dashboard');
-      return;
-    }
+    if (!workoutDayId) { navigate('/dashboard'); return; }
     init();
     return () => clearInterval(timerRef.current);
   }, [workoutDayId]);
@@ -34,11 +31,8 @@ export function WorkoutSessionPage() {
   async function init() {
     if (activeSession) return;
     setIsStarting(true);
-    try {
-      await startSession(workoutDayId);
-    } finally {
-      setIsStarting(false);
-    }
+    try { await startSession(workoutDayId); }
+    finally { setIsStarting(false); }
   }
 
   function getLogsForExercise(exerciseId) {
@@ -51,15 +45,11 @@ export function WorkoutSessionPage() {
 
   function setInput(exerciseId, setNum, field, value) {
     const key = `${exerciseId}-${setNum}`;
-    setSetInputs((prev) => ({
-      ...prev,
-      [key]: { ...(prev[key] || {}), [field]: value },
-    }));
+    setSetInputs((prev) => ({ ...prev, [key]: { ...(prev[key] || {}), [field]: value } }));
   }
 
   async function handleLogSet(exercise, setNum) {
-    const key = `${exercise.id}-${setNum}`;
-    const input = setInputs[key] || {};
+    const input = setInputs[`${exercise.id}-${setNum}`] || {};
     await logSet({
       exerciseId: exercise.id,
       setNumber: setNum,
@@ -70,12 +60,8 @@ export function WorkoutSessionPage() {
 
   async function handleComplete() {
     setIsCompleting(true);
-    try {
-      await completeSession();
-      navigate('/dashboard');
-    } finally {
-      setIsCompleting(false);
-    }
+    try { await completeSession(); navigate('/dashboard'); }
+    finally { setIsCompleting(false); }
   }
 
   function formatTime(s) {
@@ -87,8 +73,8 @@ export function WorkoutSessionPage() {
   if (isStarting || !activeSession) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="animate-spin w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full" />
-        <p className="text-slate-400">Starting workout...</p>
+        <div className="animate-spin w-10 h-10 border-2 border-primary-600 border-t-transparent rounded-full" />
+        <p className="text-gray-400 text-sm">Starting workout...</p>
       </div>
     );
   }
@@ -96,16 +82,16 @@ export function WorkoutSessionPage() {
   const exercises = activeSession.workoutDay.exercises;
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-4 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">{activeSession.workoutDay.name}</h1>
-          <p className="text-slate-400 text-sm mt-1">{exercises.length} exercises</p>
+          <h1 className="text-2xl font-bold text-gray-900">{activeSession.workoutDay.name}</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{exercises.length} exercises</p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-mono font-bold text-primary-500">{formatTime(elapsed)}</p>
-          <p className="text-xs text-slate-500">elapsed</p>
+          <p className="text-2xl font-mono font-bold text-primary-600">{formatTime(elapsed)}</p>
+          <p className="text-xs text-gray-400">elapsed</p>
         </div>
       </div>
 
@@ -113,28 +99,30 @@ export function WorkoutSessionPage() {
       <div className="space-y-4">
         {exercises.map((exercise) => {
           const logs = getLogsForExercise(exercise.id);
+          const allDone = logs.length >= exercise.sets;
           return (
-            <div key={exercise.id} className="card">
-              <div className="flex items-center justify-between mb-4">
+            <div key={exercise.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+              {/* Exercise header */}
+              <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
                 <div>
-                  <h3 className="font-semibold text-slate-100">{exercise.name}</h3>
-                  <p className="text-xs text-slate-500">
+                  <h3 className="font-bold text-gray-900">{exercise.name}</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
                     {exercise.muscleGroup.replace('_', ' ')} · Target: {exercise.sets}×{exercise.reps}
                     {exercise.weight ? ` @ ${exercise.weight}kg` : ''}
                   </p>
                 </div>
-                <span className="text-xs font-medium text-primary-500 bg-primary-500/10 px-2 py-1 rounded-full">
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${allDone ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>
                   {logs.length}/{exercise.sets} sets
                 </span>
               </div>
 
               {/* Set rows */}
-              <div className="space-y-2">
-                {/* Header */}
+              <div className="px-4 py-3 space-y-2">
+                {/* Column headers */}
                 <div className="grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 px-1">
-                  <span className="text-xs text-slate-500">Set</span>
-                  <span className="text-xs text-slate-500">Reps</span>
-                  <span className="text-xs text-slate-500">Weight (kg)</span>
+                  <span className="text-xs font-medium text-gray-400">Set</span>
+                  <span className="text-xs font-medium text-gray-400">Reps</span>
+                  <span className="text-xs font-medium text-gray-400">Weight (kg)</span>
                   <span />
                 </div>
 
@@ -142,11 +130,11 @@ export function WorkoutSessionPage() {
                   const setNum = i + 1;
                   const logged = logs.find((l) => l.setNumber === setNum);
                   return (
-                    <div key={setNum} className={`grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 items-center ${logged ? 'opacity-60' : ''}`}>
-                      <span className="text-sm text-slate-400 font-medium">{setNum}</span>
+                    <div key={setNum} className={`grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 items-center ${logged ? 'opacity-50' : ''}`}>
+                      <span className="text-sm font-semibold text-gray-500">{setNum}</span>
                       <input
                         type="number"
-                        className="input text-sm py-1.5"
+                        className="input text-sm py-2"
                         placeholder={String(exercise.reps)}
                         value={logged ? logged.reps : getInput(exercise.id, setNum, 'reps')}
                         onChange={(e) => !logged && setInput(exercise.id, setNum, 'reps', e.target.value)}
@@ -154,22 +142,22 @@ export function WorkoutSessionPage() {
                       />
                       <input
                         type="number"
-                        className="input text-sm py-1.5"
+                        className="input text-sm py-2"
                         placeholder={exercise.weight ? String(exercise.weight) : '—'}
                         value={logged ? (logged.weight ?? '') : getInput(exercise.id, setNum, 'weight')}
                         onChange={(e) => !logged && setInput(exercise.id, setNum, 'weight', e.target.value)}
                         readOnly={!!logged}
                       />
                       {logged ? (
-                        <div className="flex items-center justify-center text-primary-500">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
                       ) : (
                         <button
                           onClick={() => handleLogSet(exercise, setNum)}
-                          className="w-9 h-9 rounded-lg bg-surface-700 hover:bg-primary-600 text-slate-300 hover:text-white transition flex items-center justify-center text-lg font-bold"
+                          className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-primary-600 text-gray-500 hover:text-white transition flex items-center justify-center font-bold text-base"
                         >
                           ✓
                         </button>
@@ -180,9 +168,11 @@ export function WorkoutSessionPage() {
               </div>
 
               {exercise.notes && (
-                <p className="text-xs text-slate-500 mt-3 border-t border-surface-700 pt-3">
-                  Note: {exercise.notes}
-                </p>
+                <div className="px-4 pb-4 pt-1">
+                  <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+                    Note: {exercise.notes}
+                  </p>
+                </div>
               )}
             </div>
           );
@@ -190,16 +180,16 @@ export function WorkoutSessionPage() {
       </div>
 
       {/* Finish bar */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-60 bg-surface-800 border-t border-surface-700 p-4 flex gap-3 items-center justify-between">
+      <div className="fixed bottom-0 left-0 right-0 md:left-60 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
         <div>
-          <p className="text-sm font-medium text-slate-200">{dayName}</p>
-          <p className="text-xs text-slate-500">{formatTime(elapsed)} elapsed</p>
+          <p className="text-sm font-semibold text-gray-900">{dayName}</p>
+          <p className="text-xs text-gray-400">{formatTime(elapsed)} elapsed</p>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" onClick={() => { clearSession(); navigate(-1); }}>
             Cancel
           </Button>
-          <Button variant="primary" isLoading={isCompleting} onClick={handleComplete}>
+          <Button isLoading={isCompleting} onClick={handleComplete}>
             Finish Workout
           </Button>
         </div>

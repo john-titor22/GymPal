@@ -1,14 +1,14 @@
 const colors = {
-  green: 'bg-primary-500/20 text-primary-500',
-  blue: 'bg-blue-500/20 text-blue-400',
-  yellow: 'bg-yellow-500/20 text-yellow-400',
-  red: 'bg-red-500/20 text-red-400',
-  slate: 'bg-slate-500/20 text-slate-400',
+  green:  'bg-green-50 text-green-700',
+  blue:   'bg-primary-50 text-primary-700',
+  yellow: 'bg-yellow-50 text-yellow-700',
+  red:    'bg-red-50 text-red-600',
+  gray:   'bg-gray-100 text-gray-600',
 };
 
-export function Badge({ children, color = 'slate' }) {
+export function Badge({ children, color = 'gray' }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[color]}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${colors[color]}`}>
       {children}
     </span>
   );

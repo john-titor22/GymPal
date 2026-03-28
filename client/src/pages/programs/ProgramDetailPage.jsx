@@ -26,14 +26,12 @@ export function ProgramDetailPage() {
   const { currentProgram, isLoading, fetchProgramById, addWorkoutDay, removeWorkoutDay, addExercise, removeExercise, activateProgram } = useProgramStore();
 
   const [dayModal, setDayModal] = useState(false);
-  const [exerciseModal, setExerciseModal] = useState(null); // dayId
+  const [exerciseModal, setExerciseModal] = useState(null);
   const [dayForm, setDayForm] = useState({ name: '' });
   const [exForm, setExForm] = useState({ name: '', muscleGroup: 'OTHER', sets: 3, reps: 10, weight: '', notes: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchProgramById(id);
-  }, [id, fetchProgramById]);
+  useEffect(() => { fetchProgramById(id); }, [id, fetchProgramById]);
 
   async function handleAddDay(e) {
     e.preventDefault();
@@ -68,80 +66,97 @@ export function ProgramDetailPage() {
   if (isLoading || !currentProgram) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <button onClick={() => navigate('/programs')} className="text-sm text-slate-500 hover:text-slate-300 flex items-center gap-1 mb-2">
-            ← Back
-          </button>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-100">{currentProgram.name}</h1>
-            {currentProgram.isActive && <Badge color="green">Active</Badge>}
+      <div>
+        <button
+          onClick={() => navigate('/programs')}
+          className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-3 transition"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Programs
+        </button>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900">{currentProgram.name}</h1>
+              {currentProgram.isActive && <Badge color="blue">Active</Badge>}
+            </div>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {currentProgram.durationWeeks} weeks · {currentProgram.workoutDays.length} days
+            </p>
+            {currentProgram.description && (
+              <p className="text-sm text-gray-500 mt-1">{currentProgram.description}</p>
+            )}
           </div>
-          <p className="text-slate-400 text-sm mt-1">{currentProgram.durationWeeks} weeks program</p>
-          {currentProgram.description && <p className="text-sm text-slate-500 mt-1">{currentProgram.description}</p>}
-        </div>
-        <div className="flex gap-2">
-          {!currentProgram.isActive && (
-            <Button variant="outline" onClick={() => activateProgram(id)}>Set Active</Button>
-          )}
-          <Button onClick={() => setDayModal(true)}>+ Add Day</Button>
+          <div className="flex gap-2 shrink-0">
+            {!currentProgram.isActive && (
+              <Button variant="outline" onClick={() => activateProgram(id)}>Activate</Button>
+            )}
+            <Button onClick={() => setDayModal(true)}>+ Add Day</Button>
+          </div>
         </div>
       </div>
 
       {/* Workout days */}
       {currentProgram.workoutDays.length === 0 ? (
-        <div className="card flex flex-col items-center py-12 gap-3 text-center">
-          <div className="text-3xl">📅</div>
-          <p className="text-slate-400 text-sm">No workout days yet. Add a day to get started.</p>
-          <Button onClick={() => setDayModal(true)}>Add Day</Button>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center py-14 gap-3 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl">📅</div>
+          <p className="font-semibold text-gray-900">No workout days yet</p>
+          <p className="text-sm text-gray-500">Add a day to start building your program</p>
+          <Button onClick={() => setDayModal(true)} className="mt-1">Add Day</Button>
         </div>
       ) : (
         <div className="space-y-4">
           {currentProgram.workoutDays.map((day) => (
-            <div key={day.id} className="card">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-slate-100">{day.name}</h2>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="text-xs py-1 px-2" onClick={() => setExerciseModal(day.id)}>
+            <div key={day.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+              {/* Day header */}
+              <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100">
+                <h2 className="font-bold text-gray-900">{day.name}</h2>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setExerciseModal(day.id)}
+                    className="text-xs text-primary-600 font-semibold px-3 py-1.5 rounded-lg hover:bg-primary-50 transition"
+                  >
                     + Exercise
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="text-xs py-1 px-2 text-red-400 hover:text-red-300"
+                  </button>
+                  <button
                     onClick={() => removeWorkoutDay(id, day.id)}
+                    className="text-xs text-red-400 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
                   >
                     Remove
-                  </Button>
+                  </button>
                 </div>
               </div>
 
+              {/* Exercises */}
               {!day.exercises || day.exercises.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-4">No exercises yet</p>
+                <div className="px-4 py-6 text-center">
+                  <p className="text-sm text-gray-400">No exercises yet</p>
+                </div>
               ) : (
-                <div className="space-y-2">
+                <div className="divide-y divide-gray-50">
                   {day.exercises.map((ex) => (
-                    <div key={ex.id} className="flex items-center justify-between bg-surface-900 rounded-lg px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-slate-200">{ex.name}</p>
-                          <p className="text-xs text-slate-500">
-                            {ex.sets} sets × {ex.reps} reps
-                            {ex.weight ? ` · ${ex.weight}kg` : ''}
-                            {' · '}{ex.muscleGroup.replace('_', ' ')}
-                          </p>
-                        </div>
+                    <div key={ex.id} className="flex items-center justify-between px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{ex.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {ex.sets} sets × {ex.reps} reps
+                          {ex.weight ? ` · ${ex.weight}kg` : ''}
+                          {' · '}{ex.muscleGroup.replace('_', ' ')}
+                        </p>
                       </div>
                       <button
                         onClick={() => removeExercise(day.id, ex.id)}
-                        className="text-slate-600 hover:text-red-400 transition text-lg leading-none"
+                        className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition text-lg leading-none"
                       >
                         ×
                       </button>
@@ -150,15 +165,15 @@ export function ProgramDetailPage() {
                 </div>
               )}
 
+              {/* Start workout */}
               {day.exercises?.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-surface-700">
-                  <Button
-                    variant="primary"
-                    className="w-full justify-center text-sm"
+                <div className="px-4 pb-4 pt-3 border-t border-gray-50">
+                  <button
                     onClick={() => navigate('/session', { state: { workoutDayId: day.id, dayName: day.name } })}
+                    className="w-full py-2.5 rounded-xl bg-primary-50 text-primary-600 font-semibold text-sm hover:bg-primary-100 transition"
                   >
                     Start Workout
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -200,28 +215,12 @@ export function ProgramDetailPage() {
             onChange={(e) => setExForm((f) => ({ ...f, muscleGroup: e.target.value }))}
           />
           <div className="grid grid-cols-3 gap-3">
-            <Input
-              label="Sets"
-              type="number"
-              min={1}
-              value={exForm.sets}
-              onChange={(e) => setExForm((f) => ({ ...f, sets: e.target.value }))}
-            />
-            <Input
-              label="Reps"
-              type="number"
-              min={1}
-              value={exForm.reps}
-              onChange={(e) => setExForm((f) => ({ ...f, reps: e.target.value }))}
-            />
-            <Input
-              label="Weight (kg)"
-              type="number"
-              min={0}
-              placeholder="opt."
-              value={exForm.weight}
-              onChange={(e) => setExForm((f) => ({ ...f, weight: e.target.value }))}
-            />
+            <Input label="Sets" type="number" min={1} value={exForm.sets}
+              onChange={(e) => setExForm((f) => ({ ...f, sets: e.target.value }))} />
+            <Input label="Reps" type="number" min={1} value={exForm.reps}
+              onChange={(e) => setExForm((f) => ({ ...f, reps: e.target.value }))} />
+            <Input label="Weight (kg)" type="number" min={0} placeholder="opt." value={exForm.weight}
+              onChange={(e) => setExForm((f) => ({ ...f, weight: e.target.value }))} />
           </div>
           <Input
             label="Notes (optional)"
