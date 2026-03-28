@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { EXERCISE_LIBRARY, MUSCLE_OPTIONS, EQUIPMENT_OPTIONS } from '../../data/exerciseLibrary';
 import { BodyDiagram } from '../../components/ui/BodyDiagram';
+import { ExerciseImage } from '../../components/ui/ExerciseImage';
 
 const MUSCLE_LABEL = {
   CHEST: 'Chest', BACK: 'Back', SHOULDERS: 'Shoulders', BICEPS: 'Biceps',
@@ -50,6 +51,8 @@ export function ExercisesPage() {
         </button>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          {/* Big animated image */}
+          <ExerciseImage images={selected.images} size="xl" className="w-full !rounded-xl mb-4" />
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-xl font-bold text-gray-900">{selected.name}</h1>
@@ -60,7 +63,7 @@ export function ExercisesPage() {
                 <span className="font-medium text-gray-700">Primary Muscle:</span> {MUSCLE_LABEL[selected.muscleGroup]}
               </p>
             </div>
-            <BodyDiagram muscleGroup={selected.muscleGroup} size="lg" />
+            <BodyDiagram muscleGroup={selected.muscleGroup} size="md" />
           </div>
         </div>
 
@@ -123,11 +126,9 @@ export function ExercisesPage() {
           <button
             key={ex.name}
             onClick={() => setSelected(ex)}
-            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition text-left"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
           >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold ${MUSCLE_COLOR[ex.muscleGroup]}`}>
-              {ex.muscleGroup.slice(0, 2)}
-            </div>
+            <ExerciseImage images={ex.images} size="md" />
             <div>
               <p className="text-sm font-semibold text-gray-900">{ex.name}</p>
               <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>

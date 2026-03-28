@@ -2,6 +2,10 @@ import { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSessionStore } from '../../store/sessionStore';
 import { Button } from '../../components/ui/Button';
+import { ExerciseImage } from '../../components/ui/ExerciseImage';
+import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary';
+
+const IMG_MAP = Object.fromEntries(EXERCISE_LIBRARY.map((e) => [e.name, e.images]));
 
 export function WorkoutSessionPage() {
   const location = useLocation();
@@ -104,13 +108,16 @@ export function WorkoutSessionPage() {
             <div key={exercise.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {/* Exercise header */}
               <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
-                <div>
-                  <h3 className="font-bold text-gray-900">{exercise.name}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Target: {exercise.sets}×{exercise.reps}
-                    {exercise.weight ? ` @ ${exercise.weight}kg` : ''}
-                    {exercise.equipment ? ` · ${exercise.equipment}` : ''}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <ExerciseImage images={IMG_MAP[exercise.name]} size="md" />
+                  <div>
+                    <h3 className="font-bold text-gray-900">{exercise.name}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Target: {exercise.sets}×{exercise.reps}
+                      {exercise.weight ? ` @ ${exercise.weight}kg` : ''}
+                      {exercise.equipment ? ` · ${exercise.equipment}` : ''}
+                    </p>
+                  </div>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${allDone ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>
                   {logs.length}/{exercise.sets}

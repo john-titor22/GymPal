@@ -3,7 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRoutineStore } from '../../store/routineStore';
 import { Button } from '../../components/ui/Button';
 import { BodyDiagram } from '../../components/ui/BodyDiagram';
+import { ExerciseImage } from '../../components/ui/ExerciseImage';
 import { EXERCISE_LIBRARY, MUSCLE_OPTIONS, EQUIPMENT_OPTIONS } from '../../data/exerciseLibrary';
+
+// lookup images from library by exercise name
+const IMG_MAP = Object.fromEntries(EXERCISE_LIBRARY.map((e) => [e.name, e.images]));
 
 const MUSCLE_LABEL = {
   CHEST: 'Chest', BACK: 'Back', SHOULDERS: 'Shoulders', BICEPS: 'Biceps',
@@ -115,11 +119,9 @@ export function RoutineDetailPage() {
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
           {currentRoutine.exercises.map((ex, i) => (
-            <div key={ex.id} className="flex items-center justify-between px-4 py-4">
+            <div key={ex.id} className="flex items-center justify-between px-4 py-3.5">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
-                  {i + 1}
-                </div>
+                <ExerciseImage images={IMG_MAP[ex.name]} size="md" />
                 <div>
                   <p className="font-semibold text-gray-900">{ex.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
@@ -206,7 +208,7 @@ export function RoutineDetailPage() {
                   className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <BodyDiagram muscleGroup={ex.muscleGroup} size="sm" />
+                    <ExerciseImage images={ex.images} size="md" />
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{ex.name}</p>
                       <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>
