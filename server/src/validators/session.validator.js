@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 const startSessionSchema = z.object({
-  workoutDayId: z.string().min(1),
+  routineId: z.string().min(1),
 });
 
 const logSetSchema = z.object({

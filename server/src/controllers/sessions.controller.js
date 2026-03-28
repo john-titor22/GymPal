@@ -30,7 +30,7 @@ async function getSessionById(req, res, next) {
 
 async function startSession(req, res, next) {
   try {
-    const session = await sessionsService.startSession(req.user.id, req.body.workoutDayId);
+    const session = await sessionsService.startSession(req.user.id, req.body.routineId);
     res.status(201).json(session);
   } catch (err) {
     next(err);
