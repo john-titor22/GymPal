@@ -3,6 +3,7 @@ import { useAuthStore } from './store/authStore';
 import { useInitAuth } from './hooks/useAuth';
 import { AppLayout } from './components/layout/AppLayout';
 
+import { LandingPage } from './pages/landing/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -36,11 +37,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
+        {/* Landing */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Auth */}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-        {/* Protected */}
+        {/* Protected app */}
         <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/programs" element={<ProgramsPage />} />
@@ -50,7 +54,7 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
