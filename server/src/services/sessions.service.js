@@ -95,10 +95,15 @@ async function getDashboardData(userId) {
   return { recentSessions, weekCount, totalCount };
 }
 
+async function deleteSession(userId, sessionId) {
+  await assertSessionOwner(userId, sessionId);
+  await prisma.workoutSession.delete({ where: { id: sessionId } });
+}
+
 async function assertSessionOwner(userId, sessionId) {
   const session = await prisma.workoutSession.findFirst({ where: { id: sessionId, userId } });
   if (!session) throw new AppError('Session not found', 404);
   return session;
 }
 
-module.exports = { startSession, logSet, completeSession, getSessionById, getSessions, getDashboardData };
+module.exports = { startSession, logSet, completeSession, deleteSession, getSessionById, getSessions, getDashboardData };

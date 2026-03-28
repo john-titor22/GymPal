@@ -1,5 +1,14 @@
 const sessionsService = require('../services/sessions.service');
 
+async function deleteSession(req, res, next) {
+  try {
+    await sessionsService.deleteSession(req.user.id, req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function getDashboard(req, res, next) {
   try {
     const data = await sessionsService.getDashboardData(req.user.id);
@@ -55,4 +64,4 @@ async function completeSession(req, res, next) {
   }
 }
 
-module.exports = { getDashboard, getSessions, getSessionById, startSession, logSet, completeSession };
+module.exports = { getDashboard, getSessions, getSessionById, startSession, logSet, completeSession, deleteSession };

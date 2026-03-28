@@ -24,8 +24,12 @@ async function addExercise(req, res, next) {
   try { res.status(201).json(await routinesService.addExercise(req.user.id, req.params.id, req.body)); } catch (err) { next(err); }
 }
 
+async function updateExercise(req, res, next) {
+  try { res.json(await routinesService.updateExercise(req.user.id, req.params.id, req.params.exerciseId, req.body)); } catch (err) { next(err); }
+}
+
 async function removeExercise(req, res, next) {
   try { await routinesService.removeExercise(req.user.id, req.params.id, req.params.exerciseId); res.status(204).send(); } catch (err) { next(err); }
 }
 
-module.exports = { getRoutines, getRoutineById, createRoutine, updateRoutine, deleteRoutine, addExercise, removeExercise };
+module.exports = { getRoutines, getRoutineById, createRoutine, updateRoutine, deleteRoutine, addExercise, updateExercise, removeExercise };

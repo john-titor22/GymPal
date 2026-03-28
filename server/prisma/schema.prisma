@@ -69,6 +69,7 @@ model Exercise {
   muscleGroup MuscleGroup @default(OTHER)
   equipment   String?
   sets        Int         @default(3)
+  setTypes    Json        @default("[]")
   reps        Int         @default(10)
   weight      Float?
   notes       String?

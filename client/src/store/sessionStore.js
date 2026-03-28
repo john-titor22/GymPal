@@ -36,10 +36,18 @@ export const useSessionStore = create((set) => ({
 
   completeSession: async (notes) => {
     const sessionId = useSessionStore.getState().activeSession?.id;
-    if (!sessionId) return;
+    if (!sessionId) throw new Error('No active session');
     const { data: session } = await sessionsApi.complete(sessionId, notes);
     set({ activeSession: null });
     return session;
+  },
+
+  cancelSession: async () => {
+    const sessionId = useSessionStore.getState().activeSession?.id;
+    if (sessionId) {
+      try { await sessionsApi.cancel(sessionId); } catch { /* ignore if already gone */ }
+    }
+    set({ activeSession: null });
   },
 
   clearSession: () => set({ activeSession: null }),

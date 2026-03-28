@@ -12,5 +12,6 @@ router.post('/', validate(startSessionSchema), sessionsController.startSession);
 router.get('/:id', sessionsController.getSessionById);
 router.post('/:id/sets', validate(logSetSchema), sessionsController.logSet);
 router.post('/:id/complete', validate(completeSessionSchema), sessionsController.completeSession);
+router.delete('/:id', sessionsController.deleteSession);
 
 module.exports = router;

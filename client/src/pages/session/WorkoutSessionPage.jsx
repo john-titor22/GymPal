@@ -11,10 +11,11 @@ export function WorkoutSessionPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { routineId, routineName } = location.state || {};
-  const { activeSession, startSession, logSet, completeSession, clearSession } = useSessionStore();
+  const { activeSession, startSession, logSet, completeSession, cancelSession } = useSessionStore();
 
   const [isStarting, setIsStarting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState(null);
   const [setInputs, setSetInputs] = useState({});
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
@@ -64,8 +65,15 @@ export function WorkoutSessionPage() {
 
   async function handleComplete() {
     setIsCompleting(true);
-    try { await completeSession(); navigate('/dashboard'); }
-    finally { setIsCompleting(false); }
+    setCompleteError(null);
+    try {
+      await completeSession();
+      navigate('/dashboard');
+    } catch (err) {
+      setCompleteError('Failed to finish workout. Please try again.');
+    } finally {
+      setIsCompleting(false);
+    }
   }
 
   function formatTime(s) {
@@ -187,14 +195,19 @@ export function WorkoutSessionPage() {
       </div>
 
       {/* Finish bar */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-56 bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
-        <div>
-          <p className="text-sm font-semibold text-gray-900">{routineName}</p>
-          <p className="text-xs text-gray-400">{formatTime(elapsed)} elapsed</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={() => { clearSession(); navigate(-1); }}>Cancel</Button>
-          <Button isLoading={isCompleting} onClick={handleComplete}>Finish Workout</Button>
+      <div className="fixed bottom-0 left-0 right-0 md:left-56 bg-white border-t border-gray-100 px-4 py-3 shadow-lg">
+        {completeError && (
+          <p className="text-xs text-red-500 text-center mb-2">{completeError}</p>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">{routineName}</p>
+            <p className="text-xs text-gray-400">{formatTime(elapsed)} elapsed</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => { cancelSession(); navigate(-1); }}>Cancel</Button>
+            <Button isLoading={isCompleting} onClick={handleComplete}>Finish Workout</Button>
+          </div>
         </div>
       </div>
     </div>

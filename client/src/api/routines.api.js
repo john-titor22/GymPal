@@ -7,5 +7,6 @@ export const routinesApi = {
   update: (id, data) => api.patch(`/routines/${id}`, data),
   delete: (id) => api.delete(`/routines/${id}`),
   addExercise: (routineId, data) => api.post(`/routines/${routineId}/exercises`, data),
+  updateExercise: (routineId, exerciseId, data) => api.patch(`/routines/${routineId}/exercises/${exerciseId}`, data),
   removeExercise: (routineId, exerciseId) => api.delete(`/routines/${routineId}/exercises/${exerciseId}`),
 };

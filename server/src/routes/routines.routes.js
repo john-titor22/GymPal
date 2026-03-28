@@ -10,6 +10,7 @@ router.get('/:id', ctrl.getRoutineById);
 router.patch('/:id', ctrl.updateRoutine);
 router.delete('/:id', ctrl.deleteRoutine);
 router.post('/:id/exercises', ctrl.addExercise);
+router.patch('/:id/exercises/:exerciseId', ctrl.updateExercise);
 router.delete('/:id/exercises/:exerciseId', ctrl.removeExercise);
 
 module.exports = router;

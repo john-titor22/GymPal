@@ -47,6 +47,16 @@ export const useRoutineStore = create((set) => ({
     return exercise;
   },
 
+  updateExercise: async (routineId, exerciseId, data) => {
+    const { data: exercise } = await routinesApi.updateExercise(routineId, exerciseId, data);
+    set((s) => ({
+      currentRoutine: s.currentRoutine
+        ? { ...s.currentRoutine, exercises: s.currentRoutine.exercises.map((e) => e.id === exerciseId ? exercise : e) }
+        : s.currentRoutine,
+    }));
+    return exercise;
+  },
+
   removeExercise: async (routineId, exerciseId) => {
     await routinesApi.removeExercise(routineId, exerciseId);
     set((s) => ({

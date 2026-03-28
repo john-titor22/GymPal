@@ -51,15 +51,27 @@ async function addExercise(userId, routineId, data) {
       name: data.name,
       muscleGroup: data.muscleGroup || 'OTHER',
       equipment: data.equipment || null,
-      sets: Number(data.sets) || 3,
-      reps: Number(data.reps) || 10,
-      weight: data.weight ? Number(data.weight) : null,
-      notes: data.notes || null,
-      restTimer: data.restTimer ? Number(data.restTimer) : null,
+      sets: 1,
+      reps: 0,
+      weight: null,
+      notes: null,
+      restTimer: null,
       order: count,
       routineId,
     },
   });
+}
+
+async function updateExercise(userId, routineId, exerciseId, data) {
+  await assertOwner(userId, routineId);
+  const update = {};
+  if (data.sets !== undefined) update.sets = Math.max(1, Number(data.sets));
+  if (data.setTypes !== undefined) update.setTypes = Array.isArray(data.setTypes) ? data.setTypes : [];
+  if (data.reps !== undefined) update.reps = Math.max(0, Number(data.reps));
+  if (data.weight !== undefined) update.weight = data.weight === null || data.weight === '' ? null : Number(data.weight);
+  if (data.notes !== undefined) update.notes = data.notes || null;
+  if (data.restTimer !== undefined) update.restTimer = data.restTimer === null || data.restTimer === '' ? null : Number(data.restTimer);
+  return prisma.exercise.update({ where: { id: exerciseId }, data: update });
 }
 
 async function removeExercise(userId, routineId, exerciseId) {
@@ -73,4 +85,4 @@ async function assertOwner(userId, routineId) {
   return routine;
 }
 
-module.exports = { getRoutines, getRoutineById, createRoutine, updateRoutine, deleteRoutine, addExercise, removeExercise };
+module.exports = { getRoutines, getRoutineById, createRoutine, updateRoutine, deleteRoutine, addExercise, updateExercise, removeExercise };
