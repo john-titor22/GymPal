@@ -101,14 +101,16 @@ async function getCalendarData(userId) {
 
   const sessions = await prisma.workoutSession.findMany({
     where: { userId, completedAt: { not: null }, startedAt: { gte: sixMonthsAgo } },
-    select: { startedAt: true },
+    select: { startedAt: true, completedAt: true },
   });
 
-  // Group by YYYY-MM-DD
+  // Group by YYYY-MM-DD, summing total minutes per day
   const dates = {};
   sessions.forEach((s) => {
-    const key = s.startedAt.toISOString().split('T')[0];
-    dates[key] = (dates[key] || 0) + 1;
+    const d = s.startedAt;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const minutes = Math.max(1, Math.round((new Date(s.completedAt) - new Date(s.startedAt)) / 60000));
+    dates[key] = (dates[key] || 0) + minutes;
   });
   return dates;
 }

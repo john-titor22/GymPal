@@ -1,13 +1,21 @@
+function dateKey(d) {
+  return (
+    d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0')
+  );
+}
+
 export function WorkoutCalendar({ data = {}, weeks = 16 }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const todayDow = today.getDay(); // 0=Sun
-  // Start of grid: Sunday of the oldest week
+  // Sunday of the oldest visible week
   const gridStart = new Date(today);
   gridStart.setDate(today.getDate() - todayDow - (weeks - 1) * 7);
 
-  // Build grid: array of week-columns (left=oldest, right=newest), each 7 rows (Sun→Sat)
+  // Build grid: array of week-columns (left=oldest, right=newest), 7 rows (Sun→Sat)
   const grid = [];
   for (let w = 0; w < weeks; w++) {
     const col = [];
@@ -15,16 +23,16 @@ export function WorkoutCalendar({ data = {}, weeks = 16 }) {
       const date = new Date(gridStart);
       date.setDate(gridStart.getDate() + w * 7 + d);
       if (date > today) {
-        col.push({ key: null, count: 0 });
+        col.push({ key: null, minutes: 0 });
       } else {
-        const key = date.toISOString().split('T')[0];
-        col.push({ key, count: data[key] || 0 });
+        const key = dateKey(date);
+        col.push({ key, minutes: data[key] || 0 });
       }
     }
     grid.push(col);
   }
 
-  // Month labels: mark the first column where a new month starts
+  // Month labels: first column where a new month starts
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const DAY_LABELS = ['S','M','T','W','T','F','S'];
   let lastMonth = -1;
@@ -36,18 +44,29 @@ export function WorkoutCalendar({ data = {}, weeks = 16 }) {
     return null;
   });
 
-  function cellColor(count) {
-    if (count === 0) return 'bg-gray-100';
-    if (count === 1) return 'bg-primary-200';
-    if (count === 2) return 'bg-primary-400';
-    return 'bg-primary-600';
+  // Color by total minutes that day: empty / <30 / 30–60 / 60–90 / 90+
+  function cellColor(minutes) {
+    if (minutes === 0) return 'bg-gray-100';
+    if (minutes < 30) return 'bg-primary-200';
+    if (minutes < 60) return 'bg-primary-400';
+    if (minutes < 90) return 'bg-primary-500';
+    return 'bg-primary-700';
+  }
+
+  function tooltip(cell) {
+    if (!cell.key) return '';
+    if (!cell.minutes) return cell.key;
+    const h = Math.floor(cell.minutes / 60);
+    const m = cell.minutes % 60;
+    const duration = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    return `${cell.key}: ${duration}`;
   }
 
   return (
     <div className="overflow-x-auto -mx-1 px-1">
       <div className="inline-flex flex-col" style={{ gap: '3px' }}>
 
-        {/* Month labels row */}
+        {/* Month labels */}
         <div className="flex ml-6" style={{ gap: '3px' }}>
           {grid.map((_, wi) => (
             <div key={wi} style={{ width: 14, minWidth: 14 }}>
@@ -80,15 +99,9 @@ export function WorkoutCalendar({ data = {}, weeks = 16 }) {
               {col.map((cell, di) => (
                 <div
                   key={di}
-                  title={
-                    cell.key
-                      ? cell.count > 0
-                        ? `${cell.key}: ${cell.count} workout${cell.count > 1 ? 's' : ''}`
-                        : cell.key
-                      : ''
-                  }
+                  title={tooltip(cell)}
                   style={{ width: 14, height: 14 }}
-                  className={`rounded-sm ${cell.key ? cellColor(cell.count) : 'bg-transparent'}`}
+                  className={`rounded-sm transition-colors ${cell.key ? cellColor(cell.minutes) : 'bg-transparent'}`}
                 />
               ))}
             </div>
@@ -98,8 +111,8 @@ export function WorkoutCalendar({ data = {}, weeks = 16 }) {
         {/* Legend */}
         <div className="flex items-center gap-1.5 mt-1 ml-6">
           <span className="text-[10px] text-gray-400">Less</span>
-          {[0, 1, 2, 3].map((n) => (
-            <div key={n} style={{ width: 14, height: 14 }} className={`rounded-sm ${cellColor(n)}`} />
+          {[0, 15, 45, 75, 100].map((m) => (
+            <div key={m} style={{ width: 14, height: 14 }} className={`rounded-sm ${cellColor(m)}`} />
           ))}
           <span className="text-[10px] text-gray-400">More</span>
         </div>
