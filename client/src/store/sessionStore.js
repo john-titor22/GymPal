@@ -11,17 +11,15 @@ export const useSessionStore = create((set) => ({
     set({ isLoading: true });
     try {
       const { data } = await sessionsApi.getDashboard();
-      set({ dashboard: data, isLoading: false });
+      const { calendar, ...dashboard } = data;
+      set({ dashboard, calendar: calendar || {}, isLoading: false });
     } catch {
       set({ isLoading: false });
     }
   },
 
   fetchCalendar: async () => {
-    try {
-      const { data } = await sessionsApi.getCalendar();
-      set({ calendar: data });
-    } catch { /* ignore */ }
+    // Calendar is now included in fetchDashboard; this is a no-op kept for compatibility
   },
 
   startSession: async (routineId) => {
@@ -46,11 +44,7 @@ export const useSessionStore = create((set) => ({
     const sessionId = useSessionStore.getState().activeSession?.id;
     if (!sessionId) throw new Error('No active session');
     const { data: session } = await sessionsApi.complete(sessionId, notes);
-    set({ activeSession: null, dashboard: null });
-    // Refresh calendar immediately so it's ready when user returns to dashboard
-    sessionsApi.getCalendar()
-      .then(({ data }) => set({ calendar: data }))
-      .catch(() => {});
+    set({ activeSession: null, dashboard: null, calendar: {} });
     return session;
   },
 
