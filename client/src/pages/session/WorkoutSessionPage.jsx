@@ -126,7 +126,7 @@ export function WorkoutSessionPage() {
   const allDone = totalLogged >= totalSets && totalSets > 0;
 
   return (
-    <div className="space-y-4 pb-28">
+    <div className="space-y-4 pb-40 md:pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -230,8 +230,8 @@ export function WorkoutSessionPage() {
         })}
       </div>
 
-      {/* Finish bar */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-56 bg-white border-t border-gray-100 px-4 py-3 shadow-lg">
+      {/* Finish bar — sits above BottomNav on mobile (z-50 > z-40) */}
+      <div className="fixed bottom-14 md:bottom-0 left-0 right-0 md:left-56 z-50 bg-white border-t border-gray-100 px-4 py-3 shadow-lg">
         {completeError && <p className="text-xs text-red-500 text-center mb-2">{completeError}</p>}
         <div className="flex items-center justify-between gap-3">
           <div>
