@@ -219,9 +219,9 @@ export function RoutineDetailPage() {
           const local = localData[ex.id] || { sets: ex.sets, setTypes: [], reps: '', weight: '', notes: '', restTimer: '' };
           const setTypes = normaliseSetTypes(local.setTypes, local.sets);
           return (
-            <div key={ex.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div key={ex.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {/* Exercise header */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 rounded-t-2xl">
                 <ExerciseImage images={IMG_MAP[ex.name]} size="md" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 truncate">{ex.name}</p>
@@ -289,11 +289,11 @@ export function RoutineDetailPage() {
                             {meta.badge ?? (i + 1)}
                           </button>
 
-                          {/* Type picker popover */}
+                          {/* Type picker popover — opens upward to avoid clipping */}
                           {isMenuOpen && (
                             <div
                               ref={typeMenuRef}
-                              className="absolute left-0 top-full mt-1 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1 w-40"
+                              className="absolute left-0 bottom-full mb-1 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1 w-40"
                             >
                               {SET_TYPES.map((t) => (
                                 <button
