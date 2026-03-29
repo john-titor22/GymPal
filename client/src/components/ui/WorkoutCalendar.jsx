@@ -1,20 +1,19 @@
-/**
- * GitHub-style contribution calendar — shows last `weeks` weeks of workout activity.
- */
 export function WorkoutCalendar({ data = {}, weeks = 16 }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Build grid: array of week-columns, each holding 7 day cells (Sun→Sat)
-  const grid = [];
-  const dayOfWeek = today.getDay(); // 0=Sun
+  const todayDow = today.getDay(); // 0=Sun
+  // Start of grid: Sunday of the oldest week
+  const gridStart = new Date(today);
+  gridStart.setDate(today.getDate() - todayDow - (weeks - 1) * 7);
 
-  for (let w = weeks - 1; w >= 0; w--) {
+  // Build grid: array of week-columns (left=oldest, right=newest), each 7 rows (Sun→Sat)
+  const grid = [];
+  for (let w = 0; w < weeks; w++) {
     const col = [];
     for (let d = 0; d < 7; d++) {
-      const daysAgo = w * 7 + (dayOfWeek - d + 7) % 7;
-      const date = new Date(today);
-      date.setDate(today.getDate() - daysAgo);
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + w * 7 + d);
       if (date > today) {
         col.push({ key: null, count: 0 });
       } else {
@@ -25,60 +24,71 @@ export function WorkoutCalendar({ data = {}, weeks = 16 }) {
     grid.push(col);
   }
 
-  // Month labels — find first day of each month visible in the grid
-  const monthLabels = [];
-  const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  // Month labels: mark the first column where a new month starts
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAY_LABELS = ['S','M','T','W','T','F','S'];
   let lastMonth = -1;
-  grid.forEach((col, wi) => {
+  const monthLabels = grid.map((col) => {
     const first = col.find((c) => c.key);
-    if (!first) return;
+    if (!first) return null;
     const m = new Date(first.key).getMonth();
-    if (m !== lastMonth) { monthLabels.push({ wi, label: MONTHS[m] }); lastMonth = m; }
+    if (m !== lastMonth) { lastMonth = m; return MONTHS[m]; }
+    return null;
   });
 
   function cellColor(count) {
-    if (count === 0) return 'bg-gray-100 dark:bg-gray-800';
+    if (count === 0) return 'bg-gray-100';
     if (count === 1) return 'bg-primary-200';
     if (count === 2) return 'bg-primary-400';
     return 'bg-primary-600';
   }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="inline-flex flex-col gap-1 min-w-0">
-        {/* Month labels */}
-        <div className="flex gap-1 ml-5">
-          {grid.map((_, wi) => {
-            const lbl = monthLabels.find((l) => l.wi === wi);
-            return (
-              <div key={wi} className="w-3 text-center">
-                {lbl && <span className="text-[9px] text-gray-400 font-medium">{lbl.label}</span>}
-              </div>
-            );
-          })}
+    <div className="overflow-x-auto -mx-1 px-1">
+      <div className="inline-flex flex-col" style={{ gap: '3px' }}>
+
+        {/* Month labels row */}
+        <div className="flex ml-6" style={{ gap: '3px' }}>
+          {grid.map((_, wi) => (
+            <div key={wi} style={{ width: 14, minWidth: 14 }}>
+              {monthLabels[wi] && (
+                <span className="text-[9px] leading-none text-gray-400 font-medium whitespace-nowrap">
+                  {monthLabels[wi]}
+                </span>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Grid rows (days of week) */}
-        <div className="flex gap-1">
+        {/* Day labels + grid */}
+        <div className="flex" style={{ gap: '3px' }}>
+
           {/* Day-of-week labels */}
-          <div className="flex flex-col gap-1 mr-0.5">
+          <div className="flex flex-col mr-1" style={{ gap: '3px' }}>
             {DAY_LABELS.map((d, i) => (
-              <div key={i} className="w-4 h-3 flex items-center justify-end">
+              <div key={i} style={{ width: 14, height: 14 }} className="flex items-center justify-end">
                 {[1, 3, 5].includes(i) && (
-                  <span className="text-[9px] text-gray-400 font-medium">{d}</span>
+                  <span className="text-[9px] leading-none text-gray-400 font-medium">{d}</span>
                 )}
               </div>
             ))}
           </div>
+
           {/* Week columns */}
           {grid.map((col, wi) => (
-            <div key={wi} className="flex flex-col gap-1">
+            <div key={wi} className="flex flex-col" style={{ gap: '3px' }}>
               {col.map((cell, di) => (
                 <div
                   key={di}
-                  title={cell.key ? `${cell.key}${cell.count ? `: ${cell.count} workout${cell.count > 1 ? 's' : ''}` : ''}` : ''}
-                  className={`w-3 h-3 rounded-sm transition-colors ${cell.key ? cellColor(cell.count) : 'bg-transparent'}`}
+                  title={
+                    cell.key
+                      ? cell.count > 0
+                        ? `${cell.key}: ${cell.count} workout${cell.count > 1 ? 's' : ''}`
+                        : cell.key
+                      : ''
+                  }
+                  style={{ width: 14, height: 14 }}
+                  className={`rounded-sm ${cell.key ? cellColor(cell.count) : 'bg-transparent'}`}
                 />
               ))}
             </div>
@@ -86,13 +96,14 @@ export function WorkoutCalendar({ data = {}, weeks = 16 }) {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-1.5 mt-1 ml-5">
+        <div className="flex items-center gap-1.5 mt-1 ml-6">
           <span className="text-[10px] text-gray-400">Less</span>
           {[0, 1, 2, 3].map((n) => (
-            <div key={n} className={`w-3 h-3 rounded-sm ${cellColor(n)}`} />
+            <div key={n} style={{ width: 14, height: 14 }} className={`rounded-sm ${cellColor(n)}`} />
           ))}
           <span className="text-[10px] text-gray-400">More</span>
         </div>
+
       </div>
     </div>
   );
