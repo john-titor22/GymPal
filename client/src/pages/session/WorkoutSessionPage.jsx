@@ -1,47 +1,123 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSessionStore } from '../../store/sessionStore';
+import { sessionsApi } from '../../api/sessions.api';
 import { Button } from '../../components/ui/Button';
 import { ExerciseImage } from '../../components/ui/ExerciseImage';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary';
 
 const IMG_MAP = Object.fromEntries(EXERCISE_LIBRARY.map((e) => [e.name, e.images]));
 
-// Per-set stopwatch — independent, persists while parent re-renders
-function SetTimer() {
-  const [seconds, setSeconds] = useState(0);
-  const [running, setRunning] = useState(false);
+/**
+ * Per-set timer:
+ *  - idle → running (stopwatch counts up)
+ *  - running → stopped → if restSeconds > 0: rest countdown starts automatically
+ *  - rest countdown → 0: shows "Done" state
+ *  - any state → reset button returns to idle
+ */
+function SetTimer({ restSeconds = 0 }) {
+  // phase: 'idle' | 'running' | 'rest' | 'done'
+  const [phase, setPhase] = useState('idle');
+  const [elapsed, setElapsed] = useState(0);   // stopwatch (seconds)
+  const [restLeft, setRestLeft] = useState(0); // rest countdown (seconds)
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
-    } else {
-      clearInterval(intervalRef.current);
+    clearInterval(intervalRef.current);
+    if (phase === 'running') {
+      intervalRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+    } else if (phase === 'rest') {
+      intervalRef.current = setInterval(() => {
+        setRestLeft((r) => {
+          if (r <= 1) { setPhase('done'); return 0; }
+          return r - 1;
+        });
+      }, 1000);
     }
     return () => clearInterval(intervalRef.current);
-  }, [running]);
+  }, [phase]);
 
-  function toggle() { setRunning((r) => !r); }
-  function reset() { setRunning(false); setSeconds(0); }
+  function start() { setPhase('running'); }
 
-  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-  const s = (seconds % 60).toString().padStart(2, '0');
+  function stop() {
+    if (restSeconds > 0) {
+      setRestLeft(restSeconds);
+      setPhase('rest');
+    } else {
+      setPhase('idle');
+    }
+  }
 
+  function skipRest() { setPhase('done'); setRestLeft(0); }
+
+  function reset() {
+    setPhase('idle');
+    setElapsed(0);
+    setRestLeft(0);
+  }
+
+  // Formatted stopwatch
+  const em = Math.floor(elapsed / 60).toString().padStart(2, '0');
+  const es = (elapsed % 60).toString().padStart(2, '0');
+
+  // Formatted rest countdown
+  const rm = Math.floor(restLeft / 60).toString().padStart(2, '0');
+  const rs = (restLeft % 60).toString().padStart(2, '0');
+
+  // ── Rest countdown ──────────────────────────────────────────────────────────
+  if (phase === 'rest') {
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs font-mono font-semibold w-10 text-right text-orange-500">
+          {rm}:{rs}
+        </span>
+        {/* Skip button */}
+        <button
+          onClick={skipRest}
+          className="w-7 h-7 rounded-lg bg-orange-50 text-orange-400 hover:bg-orange-100 flex items-center justify-center transition"
+          title="Skip rest"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  // ── Done ────────────────────────────────────────────────────────────────────
+  if (phase === 'done') {
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs font-semibold w-10 text-right text-green-500">Done</span>
+        <button
+          onClick={reset}
+          className="w-7 h-7 rounded-lg bg-gray-100 text-gray-400 hover:bg-gray-200 flex items-center justify-center transition"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  // ── Idle / Running (stopwatch) ───────────────────────────────────────────────
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`text-xs font-mono font-semibold w-10 text-right ${running ? 'text-primary-600' : 'text-gray-400'}`}>
-        {m}:{s}
+      <span className={`text-xs font-mono font-semibold w-10 text-right ${phase === 'running' ? 'text-primary-600' : 'text-gray-400'}`}>
+        {em}:{es}
       </span>
+      {/* Play / Pause */}
       <button
-        onClick={toggle}
+        onClick={phase === 'running' ? stop : start}
         className={`w-7 h-7 rounded-lg flex items-center justify-center transition ${
-          running
+          phase === 'running'
             ? 'bg-primary-50 text-primary-600 hover:bg-primary-100'
             : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
         }`}
       >
-        {running ? (
+        {phase === 'running' ? (
           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
             <rect x="6" y="4" width="4" height="16" rx="1" />
             <rect x="14" y="4" width="4" height="16" rx="1" />
@@ -52,7 +128,8 @@ function SetTimer() {
           </svg>
         )}
       </button>
-      {seconds > 0 && (
+      {/* Reset (only when stopwatch has run) */}
+      {elapsed > 0 && phase !== 'running' && (
         <button
           onClick={reset}
           className="w-7 h-7 rounded-lg bg-gray-100 text-gray-400 hover:bg-gray-200 flex items-center justify-center transition"
@@ -133,7 +210,7 @@ export function WorkoutSessionPage() {
       await completeSession();
       clearInterval(timerRef.current);
       setDone(true);
-    } catch (err) {
+    } catch {
       setCompleteError('Failed to finish workout. Please try again.');
     } finally {
       setIsCompleting(false);
@@ -212,6 +289,7 @@ export function WorkoutSessionPage() {
         {exercises.map((exercise) => {
           const logs = getLogsForExercise(exercise.id);
           const exDone = logs.length >= exercise.sets;
+          const restSecs = exercise.restTimer || 0;
           return (
             <div key={exercise.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
@@ -222,6 +300,7 @@ export function WorkoutSessionPage() {
                     <p className="text-xs text-gray-400 mt-0.5">
                       {exercise.equipment ? `${exercise.equipment} · ` : ''}
                       {exercise.sets} sets
+                      {restSecs > 0 ? ` · ${restSecs >= 60 ? `${restSecs / 60}m` : `${restSecs}s`} rest` : ''}
                     </p>
                   </div>
                 </div>
@@ -260,7 +339,7 @@ export function WorkoutSessionPage() {
                         onChange={(e) => !logged && setInput(exercise.id, setNum, 'reps', e.target.value)}
                         readOnly={!!logged}
                       />
-                      <SetTimer />
+                      <SetTimer restSeconds={restSecs} />
                       {logged ? (
                         <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
                           <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

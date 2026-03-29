@@ -12,14 +12,25 @@ export const useSessionStore = create((set) => ({
     try {
       const { data } = await sessionsApi.getDashboard();
       const { calendar, ...dashboard } = data;
-      set({ dashboard, calendar: calendar || {}, isLoading: false });
+      set({ dashboard, isLoading: false });
+      if (calendar !== undefined) {
+        set({ calendar });
+      } else {
+        // Fallback: server not yet returning calendar in dashboard — fetch separately
+        sessionsApi.getCalendar()
+          .then(({ data: cal }) => set({ calendar: cal || {} }))
+          .catch(() => {});
+      }
     } catch {
       set({ isLoading: false });
     }
   },
 
   fetchCalendar: async () => {
-    // Calendar is now included in fetchDashboard; this is a no-op kept for compatibility
+    try {
+      const { data } = await sessionsApi.getCalendar();
+      set({ calendar: data || {} });
+    } catch { /* ignore */ }
   },
 
   startSession: async (routineId) => {
