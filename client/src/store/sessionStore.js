@@ -4,6 +4,7 @@ import { sessionsApi } from '../api/sessions.api';
 export const useSessionStore = create((set) => ({
   activeSession: null,
   dashboard: null,
+  calendar: {},
   isLoading: false,
 
   fetchDashboard: async () => {
@@ -14,6 +15,13 @@ export const useSessionStore = create((set) => ({
     } catch {
       set({ isLoading: false });
     }
+  },
+
+  fetchCalendar: async () => {
+    try {
+      const { data } = await sessionsApi.getCalendar();
+      set({ calendar: data });
+    } catch { /* ignore */ }
   },
 
   startSession: async (routineId) => {
@@ -38,7 +46,8 @@ export const useSessionStore = create((set) => ({
     const sessionId = useSessionStore.getState().activeSession?.id;
     if (!sessionId) throw new Error('No active session');
     const { data: session } = await sessionsApi.complete(sessionId, notes);
-    set({ activeSession: null });
+    // Clear active session and stale dashboard so it refetches fresh
+    set({ activeSession: null, dashboard: null });
     return session;
   },
 

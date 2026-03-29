@@ -78,7 +78,7 @@ async function getDashboardData(userId) {
 
   const [recentSessions, weekCount, totalCount] = await Promise.all([
     prisma.workoutSession.findMany({
-      where: { userId },
+      where: { userId, completedAt: { not: null } },
       take: 5,
       orderBy: { startedAt: 'desc' },
       include: {
@@ -95,6 +95,24 @@ async function getDashboardData(userId) {
   return { recentSessions, weekCount, totalCount };
 }
 
+async function getCalendarData(userId) {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const sessions = await prisma.workoutSession.findMany({
+    where: { userId, completedAt: { not: null }, startedAt: { gte: sixMonthsAgo } },
+    select: { startedAt: true },
+  });
+
+  // Group by YYYY-MM-DD
+  const dates = {};
+  sessions.forEach((s) => {
+    const key = s.startedAt.toISOString().split('T')[0];
+    dates[key] = (dates[key] || 0) + 1;
+  });
+  return dates;
+}
+
 async function deleteSession(userId, sessionId) {
   await assertSessionOwner(userId, sessionId);
   await prisma.workoutSession.delete({ where: { id: sessionId } });
@@ -106,4 +124,4 @@ async function assertSessionOwner(userId, sessionId) {
   return session;
 }
 
-module.exports = { startSession, logSet, completeSession, deleteSession, getSessionById, getSessions, getDashboardData };
+module.exports = { startSession, logSet, completeSession, deleteSession, getSessionById, getSessions, getDashboardData, getCalendarData };

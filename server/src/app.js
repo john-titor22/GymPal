@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/users.routes');
 const routineRoutes = require('./routes/routines.routes');
 const sessionRoutes = require('./routes/sessions.routes');
+const adminRoutes = require('./routes/admin.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/routines', routineRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 app.use(errorHandler);

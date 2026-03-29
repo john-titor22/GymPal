@@ -7,6 +7,7 @@ const { startSessionSchema, logSetSchema, completeSessionSchema } = require('../
 router.use(authenticate);
 
 router.get('/dashboard', sessionsController.getDashboard);
+router.get('/calendar', sessionsController.getCalendar);
 router.get('/', sessionsController.getSessions);
 router.post('/', validate(startSessionSchema), sessionsController.startSession);
 router.get('/:id', sessionsController.getSessionById);

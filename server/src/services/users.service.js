@@ -3,7 +3,7 @@ const prisma = require('../lib/prisma');
 async function getProfile(userId) {
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, bio: true, createdAt: true },
+    select: { id: true, name: true, email: true, bio: true, isAdmin: true, createdAt: true },
   });
 }
 
@@ -15,7 +15,7 @@ async function updateProfile(userId, data) {
   return prisma.user.update({
     where: { id: userId },
     data: allowed,
-    select: { id: true, name: true, email: true, bio: true },
+    select: { id: true, name: true, email: true, bio: true, isAdmin: true },
   });
 }
 

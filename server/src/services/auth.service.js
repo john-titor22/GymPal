@@ -19,7 +19,7 @@ function generateRefreshToken(user) {
   );
 }
 
-const USER_SELECT = { id: true, name: true, email: true, bio: true };
+const USER_SELECT = { id: true, name: true, email: true, bio: true, isAdmin: true };
 
 async function register({ name, email, password }) {
   const existing = await prisma.user.findUnique({ where: { email } });

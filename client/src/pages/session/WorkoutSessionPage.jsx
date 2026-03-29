@@ -18,6 +18,7 @@ export function WorkoutSessionPage() {
   const [completeError, setCompleteError] = useState(null);
   const [setInputs, setSetInputs] = useState({});
   const [elapsed, setElapsed] = useState(0);
+  const [done, setDone] = useState(false); // success screen
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -71,7 +72,8 @@ export function WorkoutSessionPage() {
     setCompleteError(null);
     try {
       await completeSession();
-      navigate('/dashboard');
+      clearInterval(timerRef.current);
+      setDone(true); // show success screen
     } catch (err) {
       setCompleteError('Failed to finish workout. Please try again.');
     } finally {
@@ -85,6 +87,30 @@ export function WorkoutSessionPage() {
     return `${m}:${sec}`;
   }
 
+  // ── Success screen ──────────────────────────────────────────────────────────
+  if (done) {
+    const totalSets = activeSession
+      ? 0  // session was cleared, use logged count from before
+      : 0;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 px-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+          <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Workout Complete!</h1>
+          <p className="text-gray-500 mt-1">{routineName}</p>
+          <p className="text-3xl font-mono font-bold text-primary-600 mt-3">{formatTime(elapsed)}</p>
+          <p className="text-sm text-gray-400">Total time</p>
+        </div>
+        <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+      </div>
+    );
+  }
+
+  // ── Loading ─────────────────────────────────────────────────────────────────
   if (isStarting || !activeSession) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -95,6 +121,9 @@ export function WorkoutSessionPage() {
   }
 
   const exercises = activeSession.routine.exercises;
+  const totalLogged = exercises.reduce((t, ex) => t + getLogsForExercise(ex.id).length, 0);
+  const totalSets = exercises.reduce((t, ex) => t + ex.sets, 0);
+  const allDone = totalLogged >= totalSets && totalSets > 0;
 
   return (
     <div className="space-y-4 pb-28">
@@ -102,7 +131,7 @@ export function WorkoutSessionPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{activeSession.routine.name}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{exercises.length} exercises</p>
+          <p className="text-sm text-gray-400 mt-0.5">{exercises.length} exercises · {totalLogged}/{totalSets} sets</p>
         </div>
         <div className="text-right">
           <p className="text-2xl font-mono font-bold text-primary-600">{formatTime(elapsed)}</p>
@@ -110,32 +139,41 @@ export function WorkoutSessionPage() {
         </div>
       </div>
 
+      {/* All done banner */}
+      {allDone && (
+        <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-green-700">All sets complete — tap Finish Workout!</p>
+        </div>
+      )}
+
       {/* Exercises */}
       <div className="space-y-4">
         {exercises.map((exercise) => {
           const logs = getLogsForExercise(exercise.id);
-          const allDone = logs.length >= exercise.sets;
+          const exDone = logs.length >= exercise.sets;
           return (
             <div key={exercise.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              {/* Exercise header */}
               <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
                 <div className="flex items-center gap-3">
                   <ExerciseImage images={IMG_MAP[exercise.name]} size="md" />
                   <div>
                     <h3 className="font-bold text-gray-900">{exercise.name}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      Target: {exercise.sets}×{exercise.reps}
-                      {exercise.weight ? ` @ ${exercise.weight}kg` : ''}
-                      {exercise.equipment ? ` · ${exercise.equipment}` : ''}
+                      {exercise.equipment ? `${exercise.equipment} · ` : ''}
+                      {exercise.sets} sets
                     </p>
                   </div>
                 </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${allDone ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${exDone ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>
                   {logs.length}/{exercise.sets}
                 </span>
               </div>
 
-              {/* Set rows */}
               <div className="px-4 py-3 space-y-2">
                 <div className="grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 px-1">
                   <span className="text-xs font-medium text-gray-400">SET</span>
@@ -148,23 +186,19 @@ export function WorkoutSessionPage() {
                   const setNum = i + 1;
                   const logged = logs.find((l) => l.setNumber === setNum);
                   const template = Array.isArray(exercise.setsData) ? exercise.setsData[i] : null;
-                  const weightPlaceholder = template?.weight != null ? String(template.weight) : (exercise.weight ? String(exercise.weight) : '—');
-                  const repsPlaceholder = template?.reps != null && template.reps > 0 ? String(template.reps) : (exercise.reps > 0 ? String(exercise.reps) : '—');
+                  const weightPH = template?.weight != null ? String(template.weight) : (exercise.weight ? String(exercise.weight) : '—');
+                  const repsPH = template?.reps != null && template.reps > 0 ? String(template.reps) : (exercise.reps > 0 ? String(exercise.reps) : '—');
                   return (
                     <div key={setNum} className={`grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 items-center ${logged ? 'opacity-50' : ''}`}>
                       <span className="text-sm font-semibold text-gray-500">{setNum}</span>
-                      <input
-                        type="number"
-                        className="input text-sm py-2"
-                        placeholder={weightPlaceholder}
+                      <input type="number" className="input text-sm py-2"
+                        placeholder={weightPH}
                         value={logged ? (logged.weight ?? '') : getInput(exercise.id, setNum, 'weight')}
                         onChange={(e) => !logged && setInput(exercise.id, setNum, 'weight', e.target.value)}
                         readOnly={!!logged}
                       />
-                      <input
-                        type="number"
-                        className="input text-sm py-2"
-                        placeholder={repsPlaceholder}
+                      <input type="number" className="input text-sm py-2"
+                        placeholder={repsPH}
                         value={logged ? logged.reps : getInput(exercise.id, setNum, 'reps')}
                         onChange={(e) => !logged && setInput(exercise.id, setNum, 'reps', e.target.value)}
                         readOnly={!!logged}
@@ -179,9 +213,7 @@ export function WorkoutSessionPage() {
                         <button
                           onClick={() => handleLogSet(exercise, setNum)}
                           className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-primary-600 text-gray-500 hover:text-white transition flex items-center justify-center font-bold text-base"
-                        >
-                          ✓
-                        </button>
+                        >✓</button>
                       )}
                     </div>
                   );
@@ -190,9 +222,7 @@ export function WorkoutSessionPage() {
 
               {exercise.notes && (
                 <div className="px-4 pb-4 pt-1">
-                  <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-                    Note: {exercise.notes}
-                  </p>
+                  <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">Note: {exercise.notes}</p>
                 </div>
               )}
             </div>
@@ -202,9 +232,7 @@ export function WorkoutSessionPage() {
 
       {/* Finish bar */}
       <div className="fixed bottom-0 left-0 right-0 md:left-56 bg-white border-t border-gray-100 px-4 py-3 shadow-lg">
-        {completeError && (
-          <p className="text-xs text-red-500 text-center mb-2">{completeError}</p>
-        )}
+        {completeError && <p className="text-xs text-red-500 text-center mb-2">{completeError}</p>}
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-gray-900">{routineName}</p>
@@ -212,7 +240,13 @@ export function WorkoutSessionPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => { cancelSession(); navigate(-1); }}>Cancel</Button>
-            <Button isLoading={isCompleting} onClick={handleComplete}>Finish Workout</Button>
+            <Button
+              isLoading={isCompleting}
+              onClick={handleComplete}
+              className={allDone ? 'ring-2 ring-green-400 ring-offset-1' : ''}
+            >
+              Finish Workout
+            </Button>
           </div>
         </div>
       </div>

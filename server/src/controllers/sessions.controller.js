@@ -1,5 +1,12 @@
 const sessionsService = require('../services/sessions.service');
 
+async function getCalendar(req, res, next) {
+  try {
+    const data = await sessionsService.getCalendarData(req.user.id);
+    res.json(data);
+  } catch (err) { next(err); }
+}
+
 async function deleteSession(req, res, next) {
   try {
     await sessionsService.deleteSession(req.user.id, req.params.id);
@@ -64,4 +71,4 @@ async function completeSession(req, res, next) {
   }
 }
 
-module.exports = { getDashboard, getSessions, getSessionById, startSession, logSet, completeSession, deleteSession };
+module.exports = { getDashboard, getSessions, getSessionById, getCalendar, startSession, logSet, completeSession, deleteSession };

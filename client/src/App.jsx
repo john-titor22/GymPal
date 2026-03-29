@@ -13,6 +13,7 @@ import { ExercisesPage } from './pages/exercises/ExercisesPage';
 import { WorkoutSessionPage } from './pages/session/WorkoutSessionPage';
 import { HistoryPage } from './pages/history/HistoryPage';
 import { ProfilePage } from './pages/profile/ProfilePage';
+import { AdminPage } from './pages/admin/AdminPage';
 
 function PrivateRoute({ children }) {
   const { user, isLoading } = useAuthStore();
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/session" element={<WorkoutSessionPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
