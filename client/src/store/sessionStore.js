@@ -13,13 +13,8 @@ export const useSessionStore = create((set) => ({
       const { data } = await sessionsApi.getDashboard();
       const { calendar, ...dashboard } = data;
       set({ dashboard, isLoading: false });
-      if (calendar !== undefined) {
+      if (calendar && typeof calendar === 'object') {
         set({ calendar });
-      } else {
-        // Fallback: server not yet returning calendar in dashboard — fetch separately
-        sessionsApi.getCalendar()
-          .then(({ data: cal }) => set({ calendar: cal || {} }))
-          .catch(() => {});
       }
     } catch {
       set({ isLoading: false });
@@ -29,7 +24,9 @@ export const useSessionStore = create((set) => ({
   fetchCalendar: async () => {
     try {
       const { data } = await sessionsApi.getCalendar();
-      set({ calendar: data || {} });
+      if (data && typeof data === 'object') {
+        set({ calendar: data });
+      }
     } catch { /* ignore */ }
   },
 

@@ -75,10 +75,8 @@ async function getDashboardData(userId) {
   today.setHours(0, 0, 0, 0);
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const sixMonthsAgo = new Date(today);
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  const [recentSessions, weekCount, totalCount, calendarSessions] = await Promise.all([
+  const [recentSessions, weekCount, totalCount, allSessions] = await Promise.all([
     prisma.workoutSession.findMany({
       where: { userId, completedAt: { not: null } },
       take: 5,
@@ -93,37 +91,37 @@ async function getDashboardData(userId) {
     }),
     prisma.workoutSession.count({ where: { userId, completedAt: { not: null } } }),
     prisma.workoutSession.findMany({
-      where: { userId, completedAt: { not: null }, startedAt: { gte: sixMonthsAgo } },
+      where: { userId },
       select: { startedAt: true, completedAt: true },
+      orderBy: { startedAt: 'desc' },
+      take: 500,
     }),
   ]);
 
-  const calendar = {};
-  calendarSessions.forEach((s) => {
-    const d = s.startedAt;
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const minutes = Math.max(1, Math.round((new Date(s.completedAt) - new Date(s.startedAt)) / 60000));
-    calendar[key] = (calendar[key] || 0) + minutes;
-  });
-
+  const calendar = buildCalendar(allSessions);
   return { recentSessions, weekCount, totalCount, calendar };
 }
 
 async function getCalendarData(userId) {
+  const sessions = await prisma.workoutSession.findMany({
+    where: { userId },
+    select: { startedAt: true, completedAt: true },
+    orderBy: { startedAt: 'desc' },
+    take: 500,
+  });
+  return buildCalendar(sessions);
+}
+
+function buildCalendar(sessions) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  const sessions = await prisma.workoutSession.findMany({
-    where: { userId, completedAt: { not: null }, startedAt: { gte: sixMonthsAgo } },
-    select: { startedAt: true, completedAt: true },
-  });
-
-  // Group by YYYY-MM-DD, summing total minutes per day
   const dates = {};
   sessions.forEach((s) => {
-    const d = s.startedAt;
+    if (!s.completedAt) return;
+    if (new Date(s.startedAt) < sixMonthsAgo) return;
+    const d = new Date(s.startedAt);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const minutes = Math.max(1, Math.round((new Date(s.completedAt) - new Date(s.startedAt)) / 60000));
+    const minutes = Math.max(1, Math.round((new Date(s.completedAt) - d) / 60000));
     dates[key] = (dates[key] || 0) + minutes;
   });
   return dates;
