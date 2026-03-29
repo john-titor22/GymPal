@@ -11,7 +11,6 @@ import { RoutinesPage } from './pages/routines/RoutinesPage';
 import { RoutineDetailPage } from './pages/routines/RoutineDetailPage';
 import { ExercisesPage } from './pages/exercises/ExercisesPage';
 import { WorkoutSessionPage } from './pages/session/WorkoutSessionPage';
-import { HistoryPage } from './pages/history/HistoryPage';
 import { ProfilePage } from './pages/profile/ProfilePage';
 import { AdminPage } from './pages/admin/AdminPage';
 
@@ -49,7 +48,6 @@ export default function App() {
           <Route path="/routines/:id" element={<RoutineDetailPage />} />
           <Route path="/exercises" element={<ExercisesPage />} />
           <Route path="/session" element={<WorkoutSessionPage />} />
-          <Route path="/history" element={<HistoryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Route>
