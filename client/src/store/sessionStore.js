@@ -46,8 +46,11 @@ export const useSessionStore = create((set) => ({
     const sessionId = useSessionStore.getState().activeSession?.id;
     if (!sessionId) throw new Error('No active session');
     const { data: session } = await sessionsApi.complete(sessionId, notes);
-    // Clear active session and stale dashboard so it refetches fresh
     set({ activeSession: null, dashboard: null });
+    // Refresh calendar immediately so it's ready when user returns to dashboard
+    sessionsApi.getCalendar()
+      .then(({ data }) => set({ calendar: data }))
+      .catch(() => {});
     return session;
   },
 
