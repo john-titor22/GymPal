@@ -25,18 +25,23 @@ const REST_OPTIONS = [
 
 const SET_TYPES = [
   { value: 'warmup',  label: 'Warm up', badge: 'W', bg: 'bg-amber-100',  text: 'text-amber-600' },
-  { value: 'normal',  label: 'Normal',  badge: null, bg: 'bg-gray-100',   text: 'text-gray-600'  },
+  { value: 'normal',  label: 'Normal',  badge: null, bg: 'bg-gray-100',  text: 'text-gray-600'  },
   { value: 'failure', label: 'Failure', badge: 'F', bg: 'bg-red-100',    text: 'text-red-500'   },
   { value: 'drop',    label: 'Drop',    badge: 'D', bg: 'bg-blue-100',   text: 'text-blue-500'  },
 ];
 
-function getSetTypeMeta(type) {
+function getTypeMeta(type) {
   return SET_TYPES.find((t) => t.value === type) || SET_TYPES[1];
 }
 
-function normaliseSetTypes(rawTypes, count) {
-  const arr = Array.isArray(rawTypes) ? rawTypes : [];
-  return Array.from({ length: count }, (_, i) => arr[i] || 'normal');
+/** Build a setsData array from an exercise (handles legacy and new format) */
+function buildSetsData(ex) {
+  const raw = Array.isArray(ex.setsData) ? ex.setsData : [];
+  return Array.from({ length: Math.max(ex.sets, 1) }, (_, i) => ({
+    reps: raw[i]?.reps != null ? String(raw[i].reps) : '',
+    weight: raw[i]?.weight != null ? String(raw[i].weight) : '',
+    type: raw[i]?.type || 'normal',
+  }));
 }
 
 export function RoutineDetailPage() {
@@ -49,9 +54,9 @@ export function RoutineDetailPage() {
   const [filterMuscle, setFilterMuscle] = useState('');
   const [filterEquipment, setFilterEquipment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // { [exerciseId]: { setsData: [{reps, weight, type}], notes, restTimer } }
   const [localData, setLocalData] = useState({});
-  // { exerciseId-setIndex } → popover open
-  const [openTypeMenu, setOpenTypeMenu] = useState(null);
+  const [openTypeMenu, setOpenTypeMenu] = useState(null); // `${exerciseId}-${setIndex}`
   const typeMenuRef = useRef(null);
 
   useEffect(() => { fetchRoutineById(id); }, [id, fetchRoutineById]);
@@ -63,10 +68,7 @@ export function RoutineDetailPage() {
       currentRoutine.exercises.forEach((ex) => {
         if (!next[ex.id]) {
           next[ex.id] = {
-            sets: ex.sets,
-            setTypes: normaliseSetTypes(ex.setTypes, ex.sets),
-            reps: ex.reps > 0 ? String(ex.reps) : '',
-            weight: ex.weight != null ? String(ex.weight) : '',
+            setsData: buildSetsData(ex),
             notes: ex.notes ?? '',
             restTimer: ex.restTimer ? String(ex.restTimer) : '',
           };
@@ -79,7 +81,6 @@ export function RoutineDetailPage() {
     });
   }, [currentRoutine?.exercises.length, currentRoutine?.id]);
 
-  // Close type menu on outside click
   useEffect(() => {
     if (!openTypeMenu) return;
     function handleClick(e) {
@@ -98,47 +99,63 @@ export function RoutineDetailPage() {
     return matchSearch && matchMuscle && matchEquip;
   }), [search, filterMuscle, filterEquipment]);
 
-  function setField(exerciseId, field, value) {
-    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], [field]: value } }));
+  // Update a single set's field in local state
+  function updateSetField(exerciseId, setIndex, field, value) {
+    setLocalData((prev) => {
+      const setsData = prev[exerciseId]?.setsData?.map((s, i) =>
+        i === setIndex ? { ...s, [field]: value } : s
+      ) || [];
+      return { ...prev, [exerciseId]: { ...prev[exerciseId], setsData } };
+    });
   }
 
-  async function handleBlur(exerciseId, field) {
-    const val = localData[exerciseId]?.[field];
-    const payload = {};
-    if (field === 'notes') payload.notes = val || null;
-    else if (field === 'reps') payload.reps = val === '' ? 0 : Math.max(0, Number(val));
-    else if (field === 'weight') payload.weight = val === '' ? null : Number(val);
-    await updateExercise(id, exerciseId, payload);
+  // Save full setsData to server
+  async function saveSetsData(exerciseId, setsData) {
+    await updateExercise(id, exerciseId, {
+      setsData: setsData.map((s) => ({
+        reps: s.reps === '' ? null : Number(s.reps),
+        weight: s.weight === '' ? null : Number(s.weight),
+        type: s.type,
+      })),
+    });
+  }
+
+  async function handleSetBlur(exerciseId) {
+    const setsData = localData[exerciseId]?.setsData || [];
+    await saveSetsData(exerciseId, setsData);
   }
 
   async function handleRestTimer(exerciseId, value) {
-    setField(exerciseId, 'restTimer', value);
+    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], restTimer: value } }));
     await updateExercise(id, exerciseId, { restTimer: value === '' ? null : Number(value) });
   }
 
+  async function handleNotesBlur(exerciseId) {
+    const notes = localData[exerciseId]?.notes || '';
+    await updateExercise(id, exerciseId, { notes: notes || null });
+  }
+
   async function handleAddSet(exerciseId) {
-    const local = localData[exerciseId] || {};
-    const newSets = (local.sets || 1) + 1;
-    const newTypes = [...(local.setTypes || []), 'normal'];
-    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], sets: newSets, setTypes: newTypes } }));
-    await updateExercise(id, exerciseId, { sets: newSets, setTypes: newTypes });
+    const setsData = [...(localData[exerciseId]?.setsData || []), { reps: '', weight: '', type: 'normal' }];
+    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], setsData } }));
+    await saveSetsData(exerciseId, setsData);
   }
 
   async function handleRemoveSet(exerciseId) {
-    const local = localData[exerciseId] || {};
-    if ((local.sets || 1) <= 1) return;
-    const newSets = local.sets - 1;
-    const newTypes = (local.setTypes || []).slice(0, newSets);
-    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], sets: newSets, setTypes: newTypes } }));
-    await updateExercise(id, exerciseId, { sets: newSets, setTypes: newTypes });
+    const current = localData[exerciseId]?.setsData || [];
+    if (current.length <= 1) return;
+    const setsData = current.slice(0, -1);
+    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], setsData } }));
+    await saveSetsData(exerciseId, setsData);
   }
 
   async function handleSetType(exerciseId, setIndex, typeValue) {
-    const local = localData[exerciseId] || {};
-    const newTypes = (local.setTypes || []).map((t, i) => i === setIndex ? typeValue : t);
-    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], setTypes: newTypes } }));
+    const setsData = (localData[exerciseId]?.setsData || []).map((s, i) =>
+      i === setIndex ? { ...s, type: typeValue } : s
+    );
+    setLocalData((prev) => ({ ...prev, [exerciseId]: { ...prev[exerciseId], setsData } }));
     setOpenTypeMenu(null);
-    await updateExercise(id, exerciseId, { setTypes: newTypes });
+    await saveSetsData(exerciseId, setsData);
   }
 
   async function handlePickExercise(ex) {
@@ -158,7 +175,7 @@ export function RoutineDetailPage() {
     );
   }
 
-  const totalSets = currentRoutine.exercises.reduce((t, e) => t + (localData[e.id]?.sets ?? e.sets), 0);
+  const totalSets = currentRoutine.exercises.reduce((t, e) => t + (localData[e.id]?.setsData?.length ?? e.sets), 0);
   const primaryMuscle = currentRoutine.exercises[0]?.muscleGroup || 'OTHER';
 
   return (
@@ -216,8 +233,8 @@ export function RoutineDetailPage() {
         </div>
       ) : (
         currentRoutine.exercises.map((ex) => {
-          const local = localData[ex.id] || { sets: ex.sets, setTypes: [], reps: '', weight: '', notes: '', restTimer: '' };
-          const setTypes = normaliseSetTypes(local.setTypes, local.sets);
+          const local = localData[ex.id] || { setsData: buildSetsData(ex), notes: '', restTimer: '' };
+          const { setsData, notes, restTimer } = local;
           return (
             <div key={ex.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {/* Exercise header */}
@@ -245,9 +262,9 @@ export function RoutineDetailPage() {
                     type="text"
                     className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-primary-400 bg-gray-50 placeholder-gray-300"
                     placeholder="Add pinned note"
-                    value={local.notes}
-                    onChange={(e) => setField(ex.id, 'notes', e.target.value)}
-                    onBlur={() => handleBlur(ex.id, 'notes')}
+                    value={notes}
+                    onChange={(e) => setLocalData((prev) => ({ ...prev, [ex.id]: { ...prev[ex.id], notes: e.target.value } }))}
+                    onBlur={() => handleNotesBlur(ex.id)}
                   />
                 </div>
 
@@ -256,7 +273,7 @@ export function RoutineDetailPage() {
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Rest Timer</p>
                   <select
                     className="w-40 text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-primary-400 bg-gray-50"
-                    value={local.restTimer}
+                    value={restTimer}
                     onChange={(e) => handleRestTimer(ex.id, e.target.value)}
                   >
                     {REST_OPTIONS.map((o) => (
@@ -274,23 +291,21 @@ export function RoutineDetailPage() {
                     <span />
                   </div>
 
-                  {setTypes.map((type, i) => {
-                    const meta = getSetTypeMeta(type);
+                  {setsData.map((set, i) => {
+                    const meta = getTypeMeta(set.type);
                     const menuKey = `${ex.id}-${i}`;
-                    const isMenuOpen = openTypeMenu === menuKey;
                     return (
                       <div key={i} className="grid grid-cols-[2.5rem_1fr_1fr_2rem] gap-2 items-center mb-2">
                         {/* Set badge — tap to change type */}
                         <div className="relative">
                           <button
-                            onClick={() => setOpenTypeMenu(isMenuOpen ? null : menuKey)}
+                            onClick={() => setOpenTypeMenu(openTypeMenu === menuKey ? null : menuKey)}
                             className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm transition ${meta.bg} ${meta.text}`}
                           >
                             {meta.badge ?? (i + 1)}
                           </button>
 
-                          {/* Type picker popover — opens upward to avoid clipping */}
-                          {isMenuOpen && (
+                          {openTypeMenu === menuKey && (
                             <div
                               ref={typeMenuRef}
                               className="absolute left-0 bottom-full mb-1 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1 w-40"
@@ -305,7 +320,7 @@ export function RoutineDetailPage() {
                                     {t.badge ?? (i + 1)}
                                   </span>
                                   <span className="text-sm font-medium text-gray-700">{t.label}</span>
-                                  {type === t.value && (
+                                  {set.type === t.value && (
                                     <svg className="w-4 h-4 text-primary-600 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
@@ -316,27 +331,31 @@ export function RoutineDetailPage() {
                           )}
                         </div>
 
+                        {/* KG — independent per set */}
                         <input
                           type="number"
                           min="0"
                           className="h-9 w-full border border-gray-200 rounded-xl px-2 text-sm text-center focus:outline-none focus:border-primary-400 bg-gray-50 placeholder-gray-300"
                           placeholder="—"
-                          value={local.weight}
-                          onChange={(e) => setField(ex.id, 'weight', e.target.value)}
-                          onBlur={() => handleBlur(ex.id, 'weight')}
+                          value={set.weight}
+                          onChange={(e) => updateSetField(ex.id, i, 'weight', e.target.value)}
+                          onBlur={() => handleSetBlur(ex.id)}
                         />
+
+                        {/* Reps — independent per set */}
                         <input
                           type="number"
                           min="0"
                           className="h-9 w-full border border-gray-200 rounded-xl px-2 text-sm text-center focus:outline-none focus:border-primary-400 bg-gray-50 placeholder-gray-300"
                           placeholder="—"
-                          value={local.reps}
-                          onChange={(e) => setField(ex.id, 'reps', e.target.value)}
-                          onBlur={() => handleBlur(ex.id, 'reps')}
+                          value={set.reps}
+                          onChange={(e) => updateSetField(ex.id, i, 'reps', e.target.value)}
+                          onBlur={() => handleSetBlur(ex.id)}
                         />
+
                         <button
                           onClick={() => handleRemoveSet(ex.id)}
-                          disabled={local.sets <= 1}
+                          disabled={setsData.length <= 1}
                           className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 transition disabled:opacity-30 disabled:cursor-not-allowed rounded"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

@@ -55,11 +55,14 @@ export function WorkoutSessionPage() {
 
   async function handleLogSet(exercise, setNum) {
     const input = setInputs[`${exercise.id}-${setNum}`] || {};
+    const template = Array.isArray(exercise.setsData) ? exercise.setsData[setNum - 1] : null;
+    const defaultReps = template?.reps ?? exercise.reps;
+    const defaultWeight = template?.weight ?? exercise.weight;
     await logSet({
       exerciseId: exercise.id,
       setNumber: setNum,
-      reps: Number(input.reps || exercise.reps),
-      weight: input.weight ? Number(input.weight) : undefined,
+      reps: Number(input.reps || defaultReps || 0),
+      weight: input.weight ? Number(input.weight) : (defaultWeight ? Number(defaultWeight) : undefined),
     });
   }
 
@@ -144,13 +147,16 @@ export function WorkoutSessionPage() {
                 {Array.from({ length: exercise.sets }).map((_, i) => {
                   const setNum = i + 1;
                   const logged = logs.find((l) => l.setNumber === setNum);
+                  const template = Array.isArray(exercise.setsData) ? exercise.setsData[i] : null;
+                  const weightPlaceholder = template?.weight != null ? String(template.weight) : (exercise.weight ? String(exercise.weight) : '—');
+                  const repsPlaceholder = template?.reps != null && template.reps > 0 ? String(template.reps) : (exercise.reps > 0 ? String(exercise.reps) : '—');
                   return (
                     <div key={setNum} className={`grid grid-cols-[2rem_1fr_1fr_2.5rem] gap-2 items-center ${logged ? 'opacity-50' : ''}`}>
                       <span className="text-sm font-semibold text-gray-500">{setNum}</span>
                       <input
                         type="number"
                         className="input text-sm py-2"
-                        placeholder={exercise.weight ? String(exercise.weight) : '—'}
+                        placeholder={weightPlaceholder}
                         value={logged ? (logged.weight ?? '') : getInput(exercise.id, setNum, 'weight')}
                         onChange={(e) => !logged && setInput(exercise.id, setNum, 'weight', e.target.value)}
                         readOnly={!!logged}
@@ -158,7 +164,7 @@ export function WorkoutSessionPage() {
                       <input
                         type="number"
                         className="input text-sm py-2"
-                        placeholder={String(exercise.reps)}
+                        placeholder={repsPlaceholder}
                         value={logged ? logged.reps : getInput(exercise.id, setNum, 'reps')}
                         onChange={(e) => !logged && setInput(exercise.id, setNum, 'reps', e.target.value)}
                         readOnly={!!logged}

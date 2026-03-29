@@ -52,6 +52,7 @@ async function addExercise(userId, routineId, data) {
       muscleGroup: data.muscleGroup || 'OTHER',
       equipment: data.equipment || null,
       sets: 1,
+      setsData: [{ reps: null, weight: null, type: 'normal' }],
       reps: 0,
       weight: null,
       notes: null,
@@ -65,10 +66,16 @@ async function addExercise(userId, routineId, data) {
 async function updateExercise(userId, routineId, exerciseId, data) {
   await assertOwner(userId, routineId);
   const update = {};
-  if (data.sets !== undefined) update.sets = Math.max(1, Number(data.sets));
-  if (data.setTypes !== undefined) update.setTypes = Array.isArray(data.setTypes) ? data.setTypes : [];
-  if (data.reps !== undefined) update.reps = Math.max(0, Number(data.reps));
-  if (data.weight !== undefined) update.weight = data.weight === null || data.weight === '' ? null : Number(data.weight);
+  if (data.setsData !== undefined && Array.isArray(data.setsData)) {
+    update.setsData = data.setsData;
+    update.sets = data.setsData.length;
+    // Keep legacy reps/weight in sync with first set for session page compatibility
+    const first = data.setsData[0];
+    if (first) {
+      update.reps = first.reps != null ? Number(first.reps) : 0;
+      update.weight = first.weight != null ? Number(first.weight) : null;
+    }
+  }
   if (data.notes !== undefined) update.notes = data.notes || null;
   if (data.restTimer !== undefined) update.restTimer = data.restTimer === null || data.restTimer === '' ? null : Number(data.restTimer);
   return prisma.exercise.update({ where: { id: exerciseId }, data: update });

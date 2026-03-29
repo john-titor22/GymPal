@@ -68,9 +68,9 @@ model Exercise {
   name        String
   muscleGroup MuscleGroup @default(OTHER)
   equipment   String?
-  sets        Int         @default(3)
-  setTypes    Json        @default("[]")
-  reps        Int         @default(10)
+  sets        Int         @default(1)
+  setsData    Json        @default("[]")
+  reps        Int         @default(0)
   weight      Float?
   notes       String?
   restTimer   Int?
