@@ -49,7 +49,7 @@ async function getSessionById(userId, sessionId) {
 }
 
 async function getSessions(userId, cursor, limit = 10) {
-  const take = Math.min(limit, 50);
+  const take = Math.min(limit, 500);
   const sessions = await prisma.workoutSession.findMany({
     where: { userId },
     take: take + 1,
