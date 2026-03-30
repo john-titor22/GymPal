@@ -20,7 +20,7 @@ export function Sidebar() {
   async function handleLogout() {
     await authApi.logout().catch(() => {});
     logout();
-    navigate('/');
+    navigate('/login');
   }
 
   return (

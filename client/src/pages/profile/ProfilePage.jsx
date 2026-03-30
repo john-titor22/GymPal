@@ -314,7 +314,7 @@ export function ProfilePage() {
   async function handleLogout() {
     await authApi.logout().catch(() => {});
     logout();
-    navigate('/');
+    navigate('/login');
   }
 
   const totalWorkouts = dashboard?.totalCount ?? 0;
