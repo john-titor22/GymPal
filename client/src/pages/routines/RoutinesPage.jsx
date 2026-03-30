@@ -73,11 +73,22 @@ export function RoutinesPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
           {routines.map((routine) => (
             <div key={routine.id} className="flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition">
-              <div className="flex-1 cursor-pointer" onClick={() => navigate(`/routines/${routine.id}`)}>
-                <p className="font-semibold text-gray-900">{routine.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {routine.exercises.length} exercises · {routine.exercises.reduce((t, e) => t + e.sets, 0)} sets
-                </p>
+              <div className="flex items-center gap-3 flex-1 cursor-pointer min-w-0" onClick={() => navigate(`/routines/${routine.id}`)}>
+                {routine.image ? (
+                  <img src={routine.image} alt={routine.name} className="w-10 h-10 rounded-xl object-cover shrink-0 border border-gray-100" />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">{routine.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {routine.exercises.length} exercises · {routine.exercises.reduce((t, e) => t + e.sets, 0)} sets
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-1 ml-3">
                 <button

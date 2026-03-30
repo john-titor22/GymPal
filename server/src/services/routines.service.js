@@ -32,9 +32,12 @@ async function createRoutine(userId, data) {
 
 async function updateRoutine(userId, routineId, data) {
   await assertOwner(userId, routineId);
+  const update = {};
+  if (data.name !== undefined) update.name = data.name;
+  if (data.image !== undefined) update.image = data.image;
   return prisma.routine.update({
     where: { id: routineId },
-    data: { name: data.name },
+    data: update,
   });
 }
 

@@ -77,12 +77,19 @@ function MonthCell({ date, inMonth, isToday, dayEntries, onDrop, onClick }) {
         {date.getDate()}
       </p>
       <div className="space-y-0.5">
-        {dayEntries.slice(0, 3).map((e) => (
-          <div key={e.id} className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
-            <p className="text-[10px] font-medium text-gray-700 truncate">{e.routine?.name}</p>
-          </div>
-        ))}
+        {dayEntries
+          .slice()
+          .sort((a, b) => new Date(a.date) - new Date(b.date))
+          .slice(0, 3)
+          .map((e) => {
+            const t = new Date(e.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            return (
+              <div key={e.id} className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
+                <p className="text-[10px] font-medium text-gray-700 truncate">{t} {e.routine?.name}</p>
+              </div>
+            );
+          })}
         {dayEntries.length > 3 && (
           <p className="text-[10px] text-gray-400">+{dayEntries.length - 3} more</p>
         )}
@@ -95,6 +102,7 @@ function MonthCell({ date, inMonth, isToday, dayEntries, onDrop, onClick }) {
 
 function DayModal({ date, entries, routines, onAdd, onRemove, onStart, onClose }) {
   const [adding, setAdding] = useState(false);
+  const [selectedTime, setSelectedTime] = useState('08:00');
   const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
 
   const dateLabel = date.toLocaleDateString('en-US', {
@@ -130,15 +138,22 @@ function DayModal({ date, entries, routines, onAdd, onRemove, onStart, onClose }
             <p className="text-sm text-gray-400 text-center py-4">No routines scheduled.</p>
           )}
 
-          {entries.map((entry) => {
+          {entries
+            .slice()
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .map((entry) => {
             const sets = entry.routine?.exercises?.reduce((t, e) => t + (e.sets || 0), 0) ?? 0;
+            const timeStr = new Date(entry.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
             return (
               <div
                 key={entry.id}
                 className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-3 border border-gray-100"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{entry.routine?.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{entry.routine?.name}</p>
+                    <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded-lg shrink-0">{timeStr}</span>
+                  </div>
                   {sets > 0 && <p className="text-xs text-gray-400">{sets} sets</p>}
                 </div>
                 {!isPast && (
@@ -164,27 +179,44 @@ function DayModal({ date, entries, routines, onAdd, onRemove, onStart, onClose }
 
           {/* Add routine picker */}
           {adding && (
-            <div className="border border-gray-100 rounded-xl overflow-hidden">
-              {routines.length === 0 && (
-                <p className="text-sm text-gray-400 px-3 py-3">No routines created yet.</p>
-              )}
-              {routines.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => { onAdd(r); setAdding(false); }}
-                  className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0 transition"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
-                    <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{r.name}</p>
-                    <p className="text-xs text-gray-400">{r.exercises?.length ?? 0} exercises</p>
-                  </div>
-                </button>
-              ))}
+            <div className="space-y-3">
+              {/* Time picker */}
+              <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <label className="text-sm font-semibold text-gray-600 shrink-0">Time</label>
+                <input
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="ml-auto text-sm font-semibold text-gray-900 bg-transparent border-none outline-none"
+                />
+              </div>
+
+              {/* Routine list */}
+              <div className="border border-gray-100 rounded-xl overflow-hidden">
+                {routines.length === 0 && (
+                  <p className="text-sm text-gray-400 px-3 py-3">No routines created yet.</p>
+                )}
+                {routines.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => { onAdd(r, selectedTime); setAdding(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-gray-50 border-b border-gray-50 last:border-0 transition"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{r.name}</p>
+                      <p className="text-xs text-gray-400">{r.exercises?.length ?? 0} exercises</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -258,16 +290,23 @@ export function SchedulePage() {
     const dateStr = over.id;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
     try {
-      const { data } = await scheduleApi.create({ routineId: routine.id, date: dateStr });
+      // Default to 08:00 local time when dropped via DnD
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const dt = new Date(year, month - 1, day, 8, 0, 0);
+      const { data } = await scheduleApi.create({ routineId: routine.id, date: dt.toISOString() });
       setEntries((prev) => [...prev, data]);
     } catch { /* ignore */ }
   }
 
   // Modal handlers
-  async function handleAdd(routine) {
+  async function handleAdd(routine, time = '08:00') {
     if (!selectedDay) return;
     try {
-      const { data } = await scheduleApi.create({ routineId: routine.id, date: toDateStr(selectedDay) });
+      // Combine date + time into a local ISO datetime string
+      const [hours, minutes] = time.split(':');
+      const dt = new Date(selectedDay);
+      dt.setHours(Number(hours), Number(minutes), 0, 0);
+      const { data } = await scheduleApi.create({ routineId: routine.id, date: dt.toISOString() });
       setEntries((prev) => [...prev, data]);
     } catch { /* ignore */ }
   }

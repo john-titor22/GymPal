@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useSessionStore } from '../../store/sessionStore';
@@ -7,6 +7,7 @@ import { authApi } from '../../api/auth.api';
 import { WorkoutCalendar } from '../../components/ui/WorkoutCalendar';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { resizeImage } from '../../utils/imageResize';
 
 function calcStreak(calendarData) {
   if (!calendarData || Object.keys(calendarData).length === 0) return 0;
@@ -35,6 +36,8 @@ export function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [calendarData, setCalendarData] = useState({});
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -54,6 +57,20 @@ export function ProfilePage() {
     }
   }
 
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const base64 = await resizeImage(file, 512, 0.85);
+      const { data } = await authApi.updateProfile({ avatar: base64 });
+      setUser(data);
+    } finally {
+      setAvatarUploading(false);
+      e.target.value = '';
+    }
+  }
+
   async function handleLogout() {
     await authApi.logout().catch(() => {});
     logout();
@@ -68,9 +85,31 @@ export function ProfilePage() {
       {/* Profile header card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary-600 flex items-center justify-center text-2xl font-bold text-white shrink-0">
-            {user?.name?.charAt(0).toUpperCase()}
-          </div>
+          {/* Avatar */}
+          <button
+            onClick={() => avatarInputRef.current?.click()}
+            className="relative w-16 h-16 rounded-full shrink-0 group"
+            title="Change photo"
+          >
+            {user?.avatar ? (
+              <img src={user.avatar} alt="avatar" className="w-16 h-16 rounded-full object-cover" />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-primary-600 flex items-center justify-center text-2xl font-bold text-white">
+                {user?.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+              {avatarUploading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              )}
+            </div>
+          </button>
+          <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
           <div className="flex-1 min-w-0">
             <p className="text-lg font-bold text-gray-900 truncate">{user?.name}</p>
             <p className="text-sm text-gray-400 truncate">{user?.email}</p>

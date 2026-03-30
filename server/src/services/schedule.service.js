@@ -5,7 +5,7 @@ async function getSchedule(userId, from, to) {
   return prisma.scheduledWorkout.findMany({
     where: {
       userId,
-      date: { gte: new Date(from), lte: new Date(to) },
+      date: { gte: new Date(from), lte: new Date(to + 'T23:59:59.999Z') },
     },
     include: {
       routine: {

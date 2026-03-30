@@ -48,8 +48,14 @@ export function Sidebar() {
 
       <div className="px-3 pb-5 pt-4 border-t border-gray-100">
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-sm font-bold shrink-0">
-            {user?.name?.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full shrink-0 overflow-hidden">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-sm font-bold">
+                {user?.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
