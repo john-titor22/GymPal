@@ -13,38 +13,90 @@ import { resizeImage } from '../../utils/imageResize';
 // ── Achievement definitions ───────────────────────────────────────────────────
 
 const MONTH_TIERS = [
-  { id: 'm1',  label: 'First Steps',  days: 1,  desc: '1 day in a month' },
-  { id: 'm5',  label: 'Regular',      days: 5,  desc: '5 days in a month' },
-  { id: 'm10', label: 'Dedicated',    days: 10, desc: '10 days in a month' },
-  { id: 'm15', label: 'Consistent',   days: 15, desc: '15 days in a month' },
-  { id: 'm20', label: 'Unstoppable',  days: 20, desc: '20 days in a month' },
-  { id: 'm25', label: 'Iron Will',    days: 25, desc: '25 days in a month' },
+  {
+    id: 'm1',  label: 'First Steps',  days: 1,
+    desc: 'Show up once. That\'s how it starts.',
+    color: { bg: '#f0fdf4', icon: '#bbf7d0', stroke: '#16a34a' },
+  },
+  {
+    id: 'm5',  label: 'Building Habit', days: 5,
+    desc: '5 sessions in a month. The routine is forming.',
+    color: { bg: '#eff6ff', icon: '#bfdbfe', stroke: '#2563eb' },
+  },
+  {
+    id: 'm10', label: 'Locked In', days: 10,
+    desc: '10 days. You don\'t skip anymore.',
+    color: { bg: '#faf5ff', icon: '#e9d5ff', stroke: '#9333ea' },
+  },
+  {
+    id: 'm15', label: 'No Days Off', days: 15,
+    desc: 'Half the month in the gym. Seriously consistent.',
+    color: { bg: '#fff7ed', icon: '#fed7aa', stroke: '#ea580c' },
+  },
+  {
+    id: 'm20', label: 'Unstoppable', days: 20,
+    desc: '20 days a month. Rest is earned, not taken.',
+    color: { bg: '#fff1f2', icon: '#fecdd3', stroke: '#e11d48' },
+  },
+  {
+    id: 'm25', label: 'Iron Will', days: 25,
+    desc: '25 days. Discipline over motivation, always.',
+    color: { bg: '#fefce8', icon: '#fef08a', stroke: '#ca8a04' },
+  },
+  {
+    id: 'mfull', label: 'Full Month', days: 'full',
+    desc: 'Every single day of the month. Absolute dedication.',
+    color: { bg: '#0f172a', icon: '#1e293b', stroke: '#f8fafc' },
+    special: true,
+  },
 ];
 
 const HOURS_TIERS = [
-  { id: 'h1',   label: 'First Hour',   hours: 1,   desc: '1 hour total' },
-  { id: 'h10',  label: 'In the Zone',  hours: 10,  desc: '10 hours total' },
-  { id: 'h25',  label: 'Committed',    hours: 25,  desc: '25 hours total' },
-  { id: 'h50',  label: 'Athlete',      hours: 50,  desc: '50 hours total' },
-  { id: 'h100', label: 'Champion',     hours: 100, desc: '100 hours total' },
-  { id: 'h250', label: 'Legend',       hours: 250, desc: '250 hours total' },
+  {
+    id: 'h1',   label: 'Off the Couch', hours: 1,
+    desc: 'Your first full hour. Welcome to the grind.',
+    color: { bg: '#f0fdf4', icon: '#bbf7d0', stroke: '#16a34a' },
+  },
+  {
+    id: 'h10',  label: 'Getting Serious', hours: 10,
+    desc: '10 hours in. You\'re not just trying anymore.',
+    color: { bg: '#eff6ff', icon: '#bfdbfe', stroke: '#2563eb' },
+  },
+  {
+    id: 'h25',  label: 'Committed', hours: 25,
+    desc: 'A full day of training. You\'re all in.',
+    color: { bg: '#faf5ff', icon: '#e9d5ff', stroke: '#9333ea' },
+  },
+  {
+    id: 'h50',  label: 'Athlete', hours: 50,
+    desc: '50 hours forged. The body is changing.',
+    color: { bg: '#fff7ed', icon: '#fed7aa', stroke: '#ea580c' },
+  },
+  {
+    id: 'h100', label: 'Century', hours: 100,
+    desc: '100 hours of sweat. Most people never get here.',
+    color: { bg: '#fff1f2', icon: '#fecdd3', stroke: '#e11d48' },
+  },
+  {
+    id: 'h250', label: 'Legend', hours: 250,
+    desc: '250 hours. Built different. No debate.',
+    color: { bg: '#fefce8', icon: '#fef08a', stroke: '#ca8a04' },
+  },
 ];
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
+// ── SVG icons per track ───────────────────────────────────────────────────────
 
-function CalendarIcon({ unlocked }) {
-  const c = unlocked ? '#2563eb' : '#d1d5db';
+function MonthIcon({ stroke }) {
   return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={c} strokeWidth={1.8}>
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={stroke} strokeWidth={1.8}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   );
 }
 
-function ClockIcon({ unlocked }) {
-  const c = unlocked ? '#2563eb' : '#d1d5db';
+function HourIcon({ stroke }) {
   return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={c} strokeWidth={1.8}>
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke={stroke} strokeWidth={1.8}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   );
@@ -52,37 +104,50 @@ function ClockIcon({ unlocked }) {
 
 // ── Achievement card ──────────────────────────────────────────────────────────
 
-function AchievementCard({ label, desc, unlocked, progress, total, Icon }) {
+function AchievementCard({ tier, unlocked, progress, total, IconComponent }) {
+  const { color, label, desc, special } = tier;
+
   return (
-    <div className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 transition ${
-      unlocked ? 'border-primary-100 bg-primary-50/40' : 'border-gray-100 bg-white opacity-60'
-    }`}>
-      {/* Icon circle */}
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-        unlocked ? 'bg-primary-100' : 'bg-gray-100'
-      }`}>
-        <Icon unlocked={unlocked} />
+    <div
+      className="flex items-center gap-3 rounded-2xl border px-3.5 py-3 transition"
+      style={unlocked
+        ? { backgroundColor: color.bg, borderColor: color.icon }
+        : { backgroundColor: '#f9fafb', borderColor: '#f3f4f6', opacity: 0.55 }
+      }
+    >
+      {/* Icon */}
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ backgroundColor: unlocked ? color.icon : '#e5e7eb' }}
+      >
+        <IconComponent stroke={unlocked ? color.stroke : '#9ca3af'} />
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className={`text-sm font-bold truncate ${unlocked ? 'text-gray-900' : 'text-gray-400'}`}>
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <p className={`text-sm font-bold truncate ${unlocked ? 'text-gray-900' : 'text-gray-400'}`}
+            style={unlocked && special ? { color: '#f8fafc' } : {}}>
             {label}
           </p>
           {unlocked && (
-            <svg className="w-3.5 h-3.5 text-primary-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-3.5 h-3.5 shrink-0" fill={color.stroke} viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
           )}
         </div>
-        <p className="text-xs text-gray-400 truncate">{desc}</p>
-        {/* Progress bar for next locked achievement */}
+        <p className="text-xs leading-snug truncate"
+          style={{ color: unlocked ? (special ? '#94a3b8' : '#6b7280') : '#9ca3af' }}>
+          {desc}
+        </p>
         {!unlocked && total > 0 && (
-          <div className="mt-1.5 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+          <div className="mt-1.5 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary-300 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (progress / total) * 100)}%` }}
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${Math.min(100, (progress / total) * 100)}%`,
+                backgroundColor: color.stroke,
+              }}
             />
           </div>
         )}
@@ -93,8 +158,11 @@ function AchievementCard({ label, desc, unlocked, progress, total, Icon }) {
 
 // ── Achievements section ──────────────────────────────────────────────────────
 
-function AchievementsSection({ bestMonthDays, totalHours }) {
-  const nextMonth = MONTH_TIERS.find((t) => bestMonthDays < t.days);
+function AchievementsSection({ bestMonthDays, totalHours, daysInBestMonth }) {
+  const nextMonth = MONTH_TIERS.find((t) => {
+    if (t.days === 'full') return bestMonthDays < daysInBestMonth;
+    return bestMonthDays < t.days;
+  });
   const nextHours = HOURS_TIERS.find((t) => totalHours < t.hours);
 
   return (
@@ -104,19 +172,21 @@ function AchievementsSection({ bestMonthDays, totalHours }) {
       {/* Monthly dedication */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Monthly dedication</p>
-        <div className="grid grid-cols-1 gap-2">
+        <div className="space-y-2">
           {MONTH_TIERS.map((t) => {
-            const unlocked = bestMonthDays >= t.days;
+            const unlocked = t.days === 'full'
+              ? bestMonthDays >= daysInBestMonth && daysInBestMonth > 0
+              : bestMonthDays >= t.days;
             const isNext = nextMonth?.id === t.id;
+            const target = t.days === 'full' ? daysInBestMonth : t.days;
             return (
               <AchievementCard
                 key={t.id}
-                label={t.label}
-                desc={t.desc}
+                tier={t}
                 unlocked={unlocked}
                 progress={isNext ? bestMonthDays : 0}
-                total={isNext ? t.days : 0}
-                Icon={CalendarIcon}
+                total={isNext ? target : 0}
+                IconComponent={MonthIcon}
               />
             );
           })}
@@ -126,19 +196,18 @@ function AchievementsSection({ bestMonthDays, totalHours }) {
       {/* Total training hours */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Total training</p>
-        <div className="grid grid-cols-1 gap-2">
+        <div className="space-y-2">
           {HOURS_TIERS.map((t) => {
             const unlocked = totalHours >= t.hours;
             const isNext = nextHours?.id === t.id;
             return (
               <AchievementCard
                 key={t.id}
-                label={t.label}
-                desc={t.desc}
+                tier={t}
                 unlocked={unlocked}
                 progress={isNext ? totalHours : 0}
                 total={isNext ? t.hours : 0}
-                Icon={ClockIcon}
+                IconComponent={HourIcon}
               />
             );
           })}
@@ -180,7 +249,7 @@ export function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [calendarData, setCalendarData] = useState({});
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const [stats, setStats] = useState({ totalMinutes: 0, bestMonthDays: 0 });
+  const [stats, setStats] = useState({ totalMinutes: 0, bestMonthDays: 0, daysInBestMonth: 0 });
   const avatarInputRef = useRef(null);
 
   useEffect(() => {
@@ -331,7 +400,11 @@ export function ProfilePage() {
       </div>
 
       {/* Achievements */}
-      <AchievementsSection bestMonthDays={stats.bestMonthDays} totalHours={totalHours} />
+      <AchievementsSection
+        bestMonthDays={stats.bestMonthDays}
+        totalHours={totalHours}
+        daysInBestMonth={stats.daysInBestMonth}
+      />
 
       {/* Account actions */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

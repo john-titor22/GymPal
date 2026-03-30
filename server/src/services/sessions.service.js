@@ -146,8 +146,16 @@ async function getStats(userId) {
     monthDays[monthKey].add(dayKey);
   });
 
-  const bestMonthDays = Object.values(monthDays).reduce((max, s) => Math.max(max, s.size), 0);
-  return { totalMinutes, bestMonthDays };
+  let bestMonthDays = 0;
+  let bestMonthKey = null;
+  for (const [key, set] of Object.entries(monthDays)) {
+    if (set.size > bestMonthDays) { bestMonthDays = set.size; bestMonthKey = key; }
+  }
+  // Days in the best calendar month (e.g. 31 for March)
+  const daysInBestMonth = bestMonthKey
+    ? new Date(Number(bestMonthKey.split('-')[0]), Number(bestMonthKey.split('-')[1]), 0).getDate()
+    : 0;
+  return { totalMinutes, bestMonthDays, daysInBestMonth };
 }
 
 async function deleteSession(userId, sessionId) {
@@ -161,4 +169,4 @@ async function assertSessionOwner(userId, sessionId) {
   return session;
 }
 
-module.exports = { startSession, logSet, completeSession, deleteSession, getSessionById, getSessions, getDashboardData, getCalendarData };
+module.exports = { startSession, logSet, completeSession, deleteSession, getSessionById, getSessions, getDashboardData, getCalendarData, getStats };
