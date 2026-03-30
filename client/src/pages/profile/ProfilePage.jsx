@@ -11,80 +11,111 @@ import { Button } from '../../components/ui/Button';
 import { resizeImage } from '../../utils/imageResize';
 
 // ── Achievement definitions ───────────────────────────────────────────────────
+// rank: combined ordering across both tracks (higher = harder)
 
 const MONTH_TIERS = [
   {
-    id: 'm1',  label: 'First Steps',  days: 1,
-    desc: 'Show up once. That\'s how it starts.',
-    color: { bg: '#f0fdf4', icon: '#bbf7d0', stroke: '#16a34a' },
+    id: 'm1',    rank: 1,  label: 'First Steps',    days: 1,
+    desc: "Show up once. That's how it starts.",
+    color: { bg: '#f0fdf4', icon: '#bbf7d0', stroke: '#16a34a', ring: '#16a34a' },
   },
   {
-    id: 'm5',  label: 'Building Habit', days: 5,
-    desc: '5 sessions in a month. The routine is forming.',
-    color: { bg: '#eff6ff', icon: '#bfdbfe', stroke: '#2563eb' },
+    id: 'm5',    rank: 3,  label: 'Building Habit', days: 5,
+    desc: "5 sessions in a month. The routine is forming.",
+    color: { bg: '#eff6ff', icon: '#bfdbfe', stroke: '#2563eb', ring: '#2563eb' },
   },
   {
-    id: 'm10', label: 'Locked In', days: 10,
-    desc: '10 days. You don\'t skip anymore.',
-    color: { bg: '#faf5ff', icon: '#e9d5ff', stroke: '#9333ea' },
+    id: 'm10',   rank: 5,  label: 'Locked In',      days: 10,
+    desc: "10 days. You don't skip anymore.",
+    color: { bg: '#faf5ff', icon: '#e9d5ff', stroke: '#9333ea', ring: '#9333ea' },
   },
   {
-    id: 'm15', label: 'No Days Off', days: 15,
-    desc: 'Half the month in the gym. Seriously consistent.',
-    color: { bg: '#fff7ed', icon: '#fed7aa', stroke: '#ea580c' },
+    id: 'm15',   rank: 7,  label: 'No Days Off',    days: 15,
+    desc: "Half the month in the gym. Seriously consistent.",
+    color: { bg: '#fff7ed', icon: '#fed7aa', stroke: '#ea580c', ring: '#ea580c' },
   },
   {
-    id: 'm20', label: 'Unstoppable', days: 20,
-    desc: '20 days a month. Rest is earned, not taken.',
-    color: { bg: '#fff1f2', icon: '#fecdd3', stroke: '#e11d48' },
+    id: 'm20',   rank: 9,  label: 'Unstoppable',    days: 20,
+    desc: "20 days a month. Rest is earned, not taken.",
+    color: { bg: '#fff1f2', icon: '#fecdd3', stroke: '#e11d48', ring: '#e11d48' },
   },
   {
-    id: 'm25', label: 'Iron Will', days: 25,
-    desc: '25 days. Discipline over motivation, always.',
-    color: { bg: '#fefce8', icon: '#fef08a', stroke: '#ca8a04' },
+    id: 'm25',   rank: 11, label: 'Iron Will',      days: 25,
+    desc: "25 days. Discipline over motivation, always.",
+    color: { bg: '#fefce8', icon: '#fef08a', stroke: '#ca8a04', ring: '#ca8a04' },
   },
   {
-    id: 'mfull', label: 'Full Month', days: 'full',
-    desc: 'Every single day of the month. Absolute dedication.',
-    color: { bg: '#0f172a', icon: '#1e293b', stroke: '#f8fafc' },
+    id: 'mfull', rank: 13, label: 'Full Month',     days: 'full',
+    desc: "Every single day of the month. Absolute dedication.",
+    color: { bg: '#0f172a', icon: '#1e293b', stroke: '#f8fafc', ring: '#e2e8f0' },
     special: true,
   },
 ];
 
 const HOURS_TIERS = [
   {
-    id: 'h1',   label: 'Off the Couch', hours: 1,
-    desc: 'Your first full hour. Welcome to the grind.',
-    color: { bg: '#f0fdf4', icon: '#bbf7d0', stroke: '#16a34a' },
+    id: 'h1',    rank: 2,  label: 'Off the Couch',    hours: 1,
+    desc: "Your first full hour. Welcome to the grind.",
+    color: { bg: '#f0fdf4', icon: '#bbf7d0', stroke: '#16a34a', ring: '#16a34a' },
   },
   {
-    id: 'h10',  label: 'Getting Serious', hours: 10,
-    desc: '10 hours in. You\'re not just trying anymore.',
-    color: { bg: '#eff6ff', icon: '#bfdbfe', stroke: '#2563eb' },
+    id: 'h10',   rank: 4,  label: 'Getting Serious',  hours: 10,
+    desc: "10 hours in. You're not just trying anymore.",
+    color: { bg: '#eff6ff', icon: '#bfdbfe', stroke: '#2563eb', ring: '#2563eb' },
   },
   {
-    id: 'h25',  label: 'Committed', hours: 25,
-    desc: 'A full day of training. You\'re all in.',
-    color: { bg: '#faf5ff', icon: '#e9d5ff', stroke: '#9333ea' },
+    id: 'h50',   rank: 6,  label: 'Committed',        hours: 50,
+    desc: "50 hours forged. The body is changing.",
+    color: { bg: '#faf5ff', icon: '#e9d5ff', stroke: '#9333ea', ring: '#9333ea' },
   },
   {
-    id: 'h50',  label: 'Athlete', hours: 50,
-    desc: '50 hours forged. The body is changing.',
-    color: { bg: '#fff7ed', icon: '#fed7aa', stroke: '#ea580c' },
+    id: 'h100',  rank: 8,  label: 'Athlete',          hours: 100,
+    desc: "100 hours of sweat. Most people never get here.",
+    color: { bg: '#fff7ed', icon: '#fed7aa', stroke: '#ea580c', ring: '#ea580c' },
   },
   {
-    id: 'h100', label: 'Century', hours: 100,
-    desc: '100 hours of sweat. Most people never get here.',
-    color: { bg: '#fff1f2', icon: '#fecdd3', stroke: '#e11d48' },
+    id: 'h250',  rank: 10, label: 'Century',          hours: 250,
+    desc: "250 hours. You live in the gym now.",
+    color: { bg: '#fff1f2', icon: '#fecdd3', stroke: '#e11d48', ring: '#e11d48' },
   },
   {
-    id: 'h250', label: 'Legend', hours: 250,
-    desc: '250 hours. Built different. No debate.',
-    color: { bg: '#fefce8', icon: '#fef08a', stroke: '#ca8a04' },
+    id: 'h500',  rank: 12, label: 'Elite',            hours: 500,
+    desc: "500 hours. This isn't a hobby anymore.",
+    color: { bg: '#fefce8', icon: '#fef08a', stroke: '#ca8a04', ring: '#ca8a04' },
+  },
+  {
+    id: 'h1000', rank: 14, label: 'Veteran',          hours: 1000,
+    desc: "1000 hours. A thousand hours in the iron. Respect.",
+    color: { bg: '#fff7ed', icon: '#fed7aa', stroke: '#b45309', ring: '#b45309' },
+  },
+  {
+    id: 'h2500', rank: 16, label: 'Legend',           hours: 2500,
+    desc: "2500 hours. You are the gym.",
+    color: { bg: '#0f172a', icon: '#1e293b', stroke: '#f8fafc', ring: '#e2e8f0' },
+    special: true,
   },
 ];
 
-// ── SVG icons per track ───────────────────────────────────────────────────────
+// ── Rank utility ──────────────────────────────────────────────────────────────
+
+function getHighestTier(bestMonthDays, daysInBestMonth, totalHours) {
+  let best = null;
+
+  for (const t of MONTH_TIERS) {
+    const unlocked = t.days === 'full'
+      ? bestMonthDays >= daysInBestMonth && daysInBestMonth > 0
+      : bestMonthDays >= t.days;
+    if (unlocked && (!best || t.rank > best.rank)) best = t;
+  }
+
+  for (const t of HOURS_TIERS) {
+    if (totalHours >= t.hours && (!best || t.rank > best.rank)) best = t;
+  }
+
+  return best;
+}
+
+// ── SVG icons ─────────────────────────────────────────────────────────────────
 
 function MonthIcon({ stroke }) {
   return (
@@ -106,16 +137,14 @@ function HourIcon({ stroke }) {
 
 function AchievementCard({ tier, unlocked, progress, total, IconComponent }) {
   const { color, label, desc, special } = tier;
-
   return (
     <div
       className="flex items-center gap-3 rounded-2xl border px-3.5 py-3 transition"
       style={unlocked
         ? { backgroundColor: color.bg, borderColor: color.icon }
-        : { backgroundColor: '#f9fafb', borderColor: '#f3f4f6', opacity: 0.55 }
+        : { backgroundColor: '#f9fafb', borderColor: '#f3f4f6', opacity: 0.5 }
       }
     >
-      {/* Icon */}
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
         style={{ backgroundColor: unlocked ? color.icon : '#e5e7eb' }}
@@ -123,11 +152,12 @@ function AchievementCard({ tier, unlocked, progress, total, IconComponent }) {
         <IconComponent stroke={unlocked ? color.stroke : '#9ca3af'} />
       </div>
 
-      {/* Text */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <p className={`text-sm font-bold truncate ${unlocked ? 'text-gray-900' : 'text-gray-400'}`}
-            style={unlocked && special ? { color: '#f8fafc' } : {}}>
+          <p
+            className="text-sm font-bold truncate"
+            style={{ color: unlocked ? (special ? '#f8fafc' : '#111827') : '#9ca3af' }}
+          >
             {label}
           </p>
           {unlocked && (
@@ -136,18 +166,17 @@ function AchievementCard({ tier, unlocked, progress, total, IconComponent }) {
             </svg>
           )}
         </div>
-        <p className="text-xs leading-snug truncate"
-          style={{ color: unlocked ? (special ? '#94a3b8' : '#6b7280') : '#9ca3af' }}>
+        <p
+          className="text-xs leading-snug"
+          style={{ color: unlocked ? (special ? '#94a3b8' : '#6b7280') : '#9ca3af' }}
+        >
           {desc}
         </p>
         {!unlocked && total > 0 && (
           <div className="mt-1.5 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
-              style={{
-                width: `${Math.min(100, (progress / total) * 100)}%`,
-                backgroundColor: color.stroke,
-              }}
+              style={{ width: `${Math.min(100, (progress / total) * 100)}%`, backgroundColor: color.stroke }}
             />
           </div>
         )}
@@ -159,17 +188,15 @@ function AchievementCard({ tier, unlocked, progress, total, IconComponent }) {
 // ── Achievements section ──────────────────────────────────────────────────────
 
 function AchievementsSection({ bestMonthDays, totalHours, daysInBestMonth }) {
-  const nextMonth = MONTH_TIERS.find((t) => {
-    if (t.days === 'full') return bestMonthDays < daysInBestMonth;
-    return bestMonthDays < t.days;
-  });
+  const nextMonth = MONTH_TIERS.find((t) =>
+    t.days === 'full' ? bestMonthDays < daysInBestMonth : bestMonthDays < t.days
+  );
   const nextHours = HOURS_TIERS.find((t) => totalHours < t.hours);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 space-y-4">
       <h2 className="font-bold text-gray-900">Achievements</h2>
 
-      {/* Monthly dedication */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Monthly dedication</p>
         <div className="space-y-2">
@@ -193,7 +220,6 @@ function AchievementsSection({ bestMonthDays, totalHours, daysInBestMonth }) {
         </div>
       </div>
 
-      {/* Total training hours */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Total training</p>
         <div className="space-y-2">
@@ -294,25 +320,45 @@ export function ProfilePage() {
   const totalWorkouts = dashboard?.totalCount ?? 0;
   const streak = calcStreak(calendarData);
   const totalHours = stats.totalMinutes / 60;
+  const highestTier = getHighestTier(stats.bestMonthDays, stats.daysInBestMonth, totalHours);
+  const rankColor = highestTier?.color ?? null;
 
   return (
     <div className="space-y-5 pb-8">
-      {/* Profile header card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5">
+      {/* Profile header card — border reflects rank */}
+      <div
+        className="bg-white rounded-2xl shadow-sm px-5 py-5 transition-all duration-500"
+        style={{
+          border: rankColor ? `2px solid ${rankColor.ring}` : '1px solid #f3f4f6',
+        }}
+      >
         <div className="flex items-center gap-4">
-          {/* Avatar */}
+          {/* Avatar with rank ring */}
           <button
             onClick={() => avatarInputRef.current?.click()}
-            className="relative w-16 h-16 rounded-full shrink-0 group"
+            className="relative shrink-0 group"
+            style={{ padding: rankColor ? 3 : 0 }}
             title="Change photo"
           >
-            {user?.avatar ? (
-              <img src={user.avatar} alt="avatar" className="w-16 h-16 rounded-full object-cover" />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-primary-600 flex items-center justify-center text-2xl font-bold text-white">
-                {user?.name?.charAt(0).toUpperCase()}
-              </div>
+            {/* Rank ring */}
+            {rankColor && (
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{ background: rankColor.ring, borderRadius: '9999px' }}
+              />
             )}
+            <div className="relative rounded-full overflow-hidden" style={{ width: 64, height: 64 }}>
+              {user?.avatar ? (
+                <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center text-2xl font-bold text-white"
+                  style={{ background: rankColor ? rankColor.stroke : '#2563eb' }}
+                >
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
             <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
               {avatarUploading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -328,19 +374,31 @@ export function ProfilePage() {
 
           <div className="flex-1 min-w-0">
             <p className="text-lg font-bold text-gray-900 truncate">{user?.name}</p>
-            <p className="text-sm text-gray-400 truncate">{user?.email}</p>
-            {user?.bio && <p className="text-sm text-gray-500 mt-1 truncate">{user.bio}</p>}
+            {/* Rank title badge */}
+            {highestTier && (
+              <span
+                className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg mt-0.5"
+                style={{
+                  backgroundColor: highestTier.special ? highestTier.color.icon : highestTier.color.icon,
+                  color: highestTier.special ? highestTier.color.stroke : highestTier.color.stroke,
+                }}
+              >
+                {highestTier.label}
+              </span>
+            )}
+            <p className="text-sm text-gray-400 truncate mt-0.5">{user?.email}</p>
+            {user?.bio && <p className="text-sm text-gray-500 truncate">{user.bio}</p>}
           </div>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-0 mt-4 pt-4 border-t border-gray-50">
+        <div className="grid grid-cols-3 gap-0 mt-4 pt-4" style={{ borderTop: rankColor ? `1px solid ${rankColor.icon}` : '1px solid #f9fafb' }}>
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-900">{totalWorkouts}</p>
             <p className="text-xs text-gray-400 mt-0.5">Workouts</p>
           </div>
           <div className="text-center border-x border-gray-100">
-            <p className="text-2xl font-bold text-primary-600">{streak}</p>
+            <p className="text-2xl font-bold" style={{ color: rankColor ? rankColor.stroke : '#2563eb' }}>{streak}</p>
             <p className="text-xs text-gray-400 mt-0.5">Day streak</p>
           </div>
           <div className="text-center">
@@ -352,7 +410,11 @@ export function ProfilePage() {
         {/* Edit profile toggle */}
         <button
           onClick={() => setEditOpen((o) => !o)}
-          className="mt-4 w-full py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
+          className="mt-4 w-full py-2.5 rounded-xl border text-sm font-semibold transition"
+          style={rankColor
+            ? { borderColor: rankColor.icon, color: rankColor.stroke, background: rankColor.bg }
+            : { borderColor: '#e5e7eb', color: '#4b5563' }
+          }
         >
           {editOpen ? 'Cancel' : 'Edit Profile'}
         </button>
