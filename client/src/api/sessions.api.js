@@ -9,4 +9,5 @@ export const sessionsApi = {
   complete: (sessionId, notes) => api.post(`/sessions/${sessionId}/complete`, { notes }),
   getCalendar: () => api.get('/sessions/calendar'),
   cancel: (sessionId) => api.delete(`/sessions/${sessionId}`),
+  getStats: () => api.get('/sessions/stats'),
 };

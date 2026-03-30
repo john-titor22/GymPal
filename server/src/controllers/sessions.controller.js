@@ -71,4 +71,11 @@ async function completeSession(req, res, next) {
   }
 }
 
-module.exports = { getDashboard, getSessions, getSessionById, getCalendar, startSession, logSet, completeSession, deleteSession };
+async function getStats(req, res, next) {
+  try {
+    const data = await sessionsService.getStats(req.user.id);
+    res.json(data);
+  } catch (err) { next(err); }
+}
+
+module.exports = { getDashboard, getSessions, getSessionById, getCalendar, startSession, logSet, completeSession, deleteSession, getStats };

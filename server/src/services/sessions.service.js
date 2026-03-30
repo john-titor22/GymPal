@@ -127,6 +127,29 @@ function buildCalendar(sessions) {
   return dates;
 }
 
+async function getStats(userId) {
+  const sessions = await prisma.workoutSession.findMany({
+    where: { userId, completedAt: { not: null } },
+    select: { startedAt: true, completedAt: true },
+  });
+
+  let totalMinutes = 0;
+  const monthDays = {}; // 'YYYY-MM' -> Set of day strings
+
+  sessions.forEach((s) => {
+    const start = new Date(s.startedAt);
+    const mins = Math.max(1, Math.round((new Date(s.completedAt) - start) / 60000));
+    totalMinutes += mins;
+    const monthKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+    const dayKey = `${monthKey}-${String(start.getDate()).padStart(2, '0')}`;
+    if (!monthDays[monthKey]) monthDays[monthKey] = new Set();
+    monthDays[monthKey].add(dayKey);
+  });
+
+  const bestMonthDays = Object.values(monthDays).reduce((max, s) => Math.max(max, s.size), 0);
+  return { totalMinutes, bestMonthDays };
+}
+
 async function deleteSession(userId, sessionId) {
   await assertSessionOwner(userId, sessionId);
   await prisma.workoutSession.delete({ where: { id: sessionId } });

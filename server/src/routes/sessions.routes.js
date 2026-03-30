@@ -8,6 +8,7 @@ router.use(authenticate);
 
 router.get('/dashboard', sessionsController.getDashboard);
 router.get('/calendar', sessionsController.getCalendar);
+router.get('/stats', sessionsController.getStats);
 router.get('/', sessionsController.getSessions);
 router.post('/', validate(startSessionSchema), sessionsController.startSession);
 router.get('/:id', sessionsController.getSessionById);
