@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSessionStore } from '../../store/sessionStore';
 import { useAuthStore } from '../../store/authStore';
@@ -12,7 +12,7 @@ function calcStreak(calendarData) {
   today.setHours(0, 0, 0, 0);
   const d = new Date(today);
   while (true) {
-    const key = d.toISOString().split('T')[0];
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     if (calendarData[key]) { streak++; }
     else if (d.getTime() < today.getTime()) { break; }
     d.setDate(d.getDate() - 1);
@@ -23,18 +23,19 @@ function calcStreak(calendarData) {
 
 export function DashboardPage() {
   const { user } = useAuthStore();
-  const { dashboard, calendar, isLoading, fetchDashboard, fetchCalendar } = useSessionStore();
+  const { dashboard, isLoading, fetchDashboard } = useSessionStore();
   const { routines, fetchRoutines } = useRoutineStore();
   const navigate = useNavigate();
 
+  const [calendarData, setCalendarData] = useState({});
+
   useEffect(() => {
     fetchDashboard();
-    fetchCalendar();
     fetchRoutines();
-  }, [fetchDashboard, fetchCalendar, fetchRoutines]);
+  }, [fetchDashboard, fetchRoutines]);
 
   const { weekCount, totalCount } = dashboard || {};
-  const streak = calcStreak(calendar);
+  const streak = calcStreak(calendarData);
 
   return (
     <div className="space-y-4 pb-6">
@@ -71,13 +72,7 @@ export function DashboardPage() {
           <h2 className="font-bold text-gray-900">Activity</h2>
           <span className="text-xs text-gray-400">{totalCount ?? 0} total workouts</span>
         </div>
-        {isLoading ? (
-          <div className="h-24 flex items-center justify-center">
-            <div className="animate-spin w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full" />
-          </div>
-        ) : (
-          <WorkoutCalendar data={calendar} weeks={16} />
-        )}
+        <WorkoutCalendar weeks={16} onData={setCalendarData} />
       </div>
 
       {/* Start workout */}

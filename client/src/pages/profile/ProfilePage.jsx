@@ -15,7 +15,7 @@ function calcStreak(calendarData) {
   today.setHours(0, 0, 0, 0);
   const d = new Date(today);
   while (true) {
-    const key = d.toISOString().split('T')[0];
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     if (calendarData[key]) { streak++; }
     else if (d.getTime() < today.getTime()) { break; }
     d.setDate(d.getDate() - 1);
@@ -27,19 +27,19 @@ function calcStreak(calendarData) {
 export function ProfilePage() {
   const navigate = useNavigate();
   const { user, setUser, logout } = useAuthStore();
-  const { dashboard, calendar, fetchDashboard, fetchCalendar } = useSessionStore();
+  const { dashboard, fetchDashboard } = useSessionStore();
   const { routines, fetchRoutines } = useRoutineStore();
 
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({ name: user?.name || '', bio: user?.bio || '' });
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [calendarData, setCalendarData] = useState({});
 
   useEffect(() => {
     fetchDashboard();
-    fetchCalendar();
     fetchRoutines();
-  }, [fetchDashboard, fetchCalendar, fetchRoutines]);
+  }, [fetchDashboard, fetchRoutines]);
 
   async function handleSave(e) {
     e.preventDefault();
@@ -61,7 +61,7 @@ export function ProfilePage() {
   }
 
   const totalWorkouts = dashboard?.totalCount ?? 0;
-  const streak = calcStreak(calendar);
+  const streak = calcStreak(calendarData);
 
   return (
     <div className="space-y-5 pb-8">
@@ -138,10 +138,10 @@ export function ProfilePage() {
       {/* Workout Calendar */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-gray-900">Workout Calendar</h2>
+          <h2 className="font-bold text-gray-900">Activity</h2>
           <span className="text-xs text-gray-400">{totalWorkouts} total</span>
         </div>
-        <WorkoutCalendar data={calendar} weeks={16} />
+        <WorkoutCalendar weeks={16} onData={setCalendarData} />
       </div>
 
       {/* Account actions */}

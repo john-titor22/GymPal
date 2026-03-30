@@ -1,91 +1,101 @@
-function dateKey(d) {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-');
-}
+import { useEffect, useState } from 'react';
+import api from '../../api/axios';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAY_LABELS = ['S','M','T','W','T','F','S'];
+const DAYS   = ['S','M','T','W','T','F','S'];
 
-export function WorkoutCalendar({ data = {}, weeks = 16 }) {
+function toKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function cellColor(mins) {
+  if (!mins)      return '#e5e7eb'; // gray-200
+  if (mins < 30)  return '#bfdbfe'; // primary-200
+  if (mins < 60)  return '#60a5fa'; // primary-400
+  if (mins < 90)  return '#3b82f6'; // primary-500
+  return           '#1d4ed8';       // primary-700
+}
+
+export function WorkoutCalendar({ weeks = 16, onData }) {
+  const [data, setData] = useState({});
+
+  useEffect(() => {
+    api.get('/sessions', { params: { limit: 500 } })
+      .then(({ data: res }) => {
+        const sixAgo = new Date();
+        sixAgo.setMonth(sixAgo.getMonth() - 6);
+        const map = {};
+        (res.sessions || []).forEach((s) => {
+          if (!s.completedAt) return;
+          const start = new Date(s.startedAt);
+          if (start < sixAgo) return;
+          const key = toKey(start);
+          const mins = Math.max(1, Math.round((new Date(s.completedAt) - start) / 60000));
+          map[key] = (map[key] || 0) + mins;
+        });
+        setData(map);
+        onData?.(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── Build grid ──────────────────────────────────────────────────────────────
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Sunday of the current week
-  const sundayThisWeek = new Date(today);
-  sundayThisWeek.setDate(today.getDate() - today.getDay());
+  // Sunday of current week
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - today.getDay());
 
-  // Build grid: array[week][day], week 0 = leftmost (oldest)
+  // grid[week][day]  week 0 = leftmost (oldest)
   const grid = [];
   for (let w = 0; w < weeks; w++) {
     const col = [];
     for (let d = 0; d < 7; d++) {
-      const offset = (w - (weeks - 1)) * 7 + d; // negative = past, 0 = this Sunday, positive = future
-      const date = new Date(sundayThisWeek);
-      date.setDate(sundayThisWeek.getDate() + offset);
+      const date = new Date(sunday);
+      date.setDate(sunday.getDate() + (w - (weeks - 1)) * 7 + d);
       if (date > today) {
-        col.push({ key: null, minutes: 0 });
+        col.push(null);
       } else {
-        const key = dateKey(date);
-        col.push({ key, minutes: data[key] || 0 });
+        const key = toKey(date);
+        col.push({ key, mins: data[key] || 0 });
       }
     }
     grid.push(col);
   }
 
-  // Month labels: first column of each new month
+  // month labels — first column of each new month
   let lastMonth = -1;
-  const monthLabels = grid.map((col) => {
-    const cell = col.find((c) => c.key);
-    if (!cell) return null;
+  const monthRow = grid.map((col) => {
+    const cell = col.find(Boolean);
+    if (!cell) return '';
     const m = new Date(cell.key).getMonth();
     if (m !== lastMonth) { lastMonth = m; return MONTHS[m]; }
-    return null;
+    return '';
   });
 
-  function cellColor(minutes) {
-    if (!minutes) return 'bg-gray-100';
-    if (minutes < 30) return 'bg-primary-200';
-    if (minutes < 60) return 'bg-primary-400';
-    if (minutes < 90) return 'bg-primary-500';
-    return 'bg-primary-700';
-  }
-
-  function tip(cell) {
-    if (!cell.key || !cell.minutes) return cell.key || '';
-    const h = Math.floor(cell.minutes / 60);
-    const m = cell.minutes % 60;
-    return `${cell.key} · ${h > 0 ? `${h}h ` : ''}${m}m`;
-  }
-
-  const CELL = 13;
+  const SZ = 13; // cell px
   const GAP = 3;
 
   return (
-    <div className="overflow-x-auto">
+    <div style={{ overflowX: 'auto' }}>
       <div style={{ display: 'inline-flex', flexDirection: 'column', gap: GAP }}>
 
-        {/* Month row */}
-        <div style={{ display: 'flex', gap: GAP, marginLeft: 18 }}>
-          {grid.map((_, wi) => (
-            <div key={wi} style={{ width: CELL, fontSize: 9, color: '#9ca3af', fontWeight: 500, whiteSpace: 'nowrap' }}>
-              {monthLabels[wi] || ''}
+        {/* Month labels */}
+        <div style={{ display: 'flex', gap: GAP, paddingLeft: 20 }}>
+          {monthRow.map((label, i) => (
+            <div key={i} style={{ width: SZ, fontSize: 9, color: '#9ca3af', whiteSpace: 'nowrap', fontWeight: 500 }}>
+              {label}
             </div>
           ))}
         </div>
 
-        {/* Day labels + cells */}
         <div style={{ display: 'flex', gap: GAP }}>
-
-          {/* Day-of-week labels */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: GAP, width: 14, marginRight: 1 }}>
-            {DAY_LABELS.map((label, i) => (
-              <div key={i} style={{ height: CELL, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                {[1, 3, 5].includes(i) && (
-                  <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 500 }}>{label}</span>
-                )}
+          {/* Day labels */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: GAP, width: 16 }}>
+            {DAYS.map((d, i) => (
+              <div key={i} style={{ height: SZ, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 2 }}>
+                {[1, 3, 5].includes(i) && <span style={{ fontSize: 9, color: '#9ca3af', fontWeight: 500 }}>{d}</span>}
               </div>
             ))}
           </div>
@@ -96,21 +106,24 @@ export function WorkoutCalendar({ data = {}, weeks = 16 }) {
               {col.map((cell, di) => (
                 <div
                   key={di}
-                  title={tip(cell)}
-                  style={{ width: CELL, height: CELL, borderRadius: 2 }}
-                  className={cell.key ? cellColor(cell.minutes) : ''}
+                  title={cell ? (cell.mins ? `${cell.key} · ${cell.mins < 60 ? `${cell.mins}m` : `${Math.floor(cell.mins/60)}h ${cell.mins%60}m`}` : cell.key) : ''}
+                  style={{
+                    width: SZ,
+                    height: SZ,
+                    borderRadius: 2,
+                    backgroundColor: cell ? cellColor(cell.mins) : 'transparent',
+                  }}
                 />
               ))}
             </div>
           ))}
-
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 18, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 20, marginTop: 2 }}>
           <span style={{ fontSize: 10, color: '#9ca3af' }}>Less</span>
           {[0, 15, 45, 75, 100].map((m) => (
-            <div key={m} style={{ width: CELL, height: CELL, borderRadius: 2 }} className={cellColor(m)} />
+            <div key={m} style={{ width: SZ, height: SZ, borderRadius: 2, backgroundColor: cellColor(m) }} />
           ))}
           <span style={{ fontSize: 10, color: '#9ca3af' }}>More</span>
         </div>
