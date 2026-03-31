@@ -56,6 +56,8 @@ export function RoutineDetailPage() {
   const [filterMuscle, setFilterMuscle] = useState('');
   const [filterEquipment, setFilterEquipment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pickerSelected, setPickerSelected] = useState(null); // name of previewed exercise
+  const [animatingExercise, setAnimatingExercise] = useState(null); // id of animating routine exercise
   // { [exerciseId]: { setsData: [{reps, weight, type}], notes, restTimer } }
   const [localData, setLocalData] = useState({});
   const [openTypeMenu, setOpenTypeMenu] = useState(null); // `${exerciseId}-${setIndex}`
@@ -293,8 +295,11 @@ export function RoutineDetailPage() {
           return (
             <div key={ex.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {/* Exercise header */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 rounded-t-2xl">
-                <ExerciseImage images={IMG_MAP[ex.name]} size="md" />
+              <div
+                className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 rounded-t-2xl cursor-pointer"
+                onClick={() => setAnimatingExercise((p) => p === ex.id ? null : ex.id)}
+              >
+                <ExerciseImage images={IMG_MAP[ex.name]} size="md" animate={animatingExercise === ex.id} />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 truncate">{ex.name}</p>
                   <p className="text-xs text-gray-400">
@@ -480,20 +485,31 @@ export function RoutineDetailPage() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-              {filtered.map((ex) => (
-                <button
-                  key={ex.name}
-                  disabled={isSubmitting}
-                  onClick={() => handlePickExercise(ex)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
-                >
-                  <ExerciseImage images={ex.images} size="md" />
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{ex.name}</p>
-                    <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>
+              {filtered.map((ex) => {
+                const selected = pickerSelected === ex.name;
+                return (
+                  <div
+                    key={ex.name}
+                    className={`flex items-center gap-3 px-4 py-3 transition cursor-pointer ${selected ? 'bg-primary-50' : 'hover:bg-gray-50'}`}
+                    onClick={() => setPickerSelected(selected ? null : ex.name)}
+                  >
+                    <ExerciseImage images={ex.images} size="md" animate={selected} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{ex.name}</p>
+                      <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>
+                    </div>
+                    {selected && (
+                      <button
+                        disabled={isSubmitting}
+                        onClick={(e) => { e.stopPropagation(); handlePickExercise(ex); setPickerSelected(null); }}
+                        className="shrink-0 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition"
+                      >
+                        Add
+                      </button>
+                    )}
                   </div>
-                </button>
-              ))}
+                );
+              })}
               {filtered.length === 0 && (
                 <p className="text-center text-gray-400 text-sm py-8">No exercises found</p>
               )}

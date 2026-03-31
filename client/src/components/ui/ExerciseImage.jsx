@@ -1,35 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+const SIZES = {
+  sm: 'w-12 h-12',
+  md: 'w-16 h-16',
+  lg: 'w-32 h-32',
+  xl: 'w-48 h-48',
+};
 
 export function ExerciseImage({ images, size = 'md', className = '', animate = false }) {
-  const [frame, setFrame] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-  const [playing, setPlaying] = useState(false); // user-triggered preview
+  const [frame, setFrame]       = useState(0);
+  const [visible, setVisible]   = useState(0);   // which img tag is shown (0 or 1) — for cross-fade
+  const [srcs, setSrcs]         = useState([null, null]);
+  const [loaded, setLoaded]     = useState([false, false]);
+  const [errors, setErrors]     = useState([false, false]);
+  const [retries, setRetries]   = useState([0, 0]);
+  const intervalRef             = useRef(null);
 
-  const sizes = {
-    sm: 'w-12 h-12',
-    md: 'w-16 h-16',
-    lg: 'w-32 h-32',
-    xl: 'w-48 h-48',
-  };
+  const isAnimating = animate;
 
-  const isAnimating = animate || playing;
-
+  // Pre-load both frames into two img slots
   useEffect(() => {
-    if (!images?.length || !isAnimating) {
-      setFrame(0);
-      return;
-    }
-    const interval = setInterval(() => setFrame((f) => (f === 0 ? 1 : 0)), 800);
-    return () => clearInterval(interval);
-  }, [images, isAnimating]);
+    if (!images?.length) return;
+    setSrcs([images[0], images[1] ?? images[0]]);
+    setLoaded([false, false]);
+    setErrors([false, false]);
+    setVisible(0);
+    setFrame(0);
+  }, [images?.[0], images?.[1]]);
 
-  // Reset loaded state when frame changes
-  useEffect(() => { setLoaded(false); }, [frame]);
+  // Animation interval — cross-fade between visible slots
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (!isAnimating || !images?.length) return;
 
-  if (error || !images?.length) {
+    intervalRef.current = setInterval(() => {
+      setVisible((v) => (v === 0 ? 1 : 0));
+    }, 900);
+
+    return () => clearInterval(intervalRef.current);
+  }, [isAnimating, images?.length]);
+
+  function handleError(slot) {
+    setErrors((e) => {
+      const next = [...e];
+      if (retries[slot] < 2) {
+        // Retry with cache-bust
+        const bust = `?r=${retries[slot] + 1}`;
+        setSrcs((s) => { const n = [...s]; n[slot] = (images[slot] ?? images[0]) + bust; return n; });
+        setRetries((r) => { const n = [...r]; n[slot] = r[slot] + 1; return n; });
+      } else {
+        next[slot] = true;
+      }
+      return next;
+    });
+  }
+
+  const bothFailed = errors[0] && errors[1];
+  const firstReady = loaded[0] && !errors[0];
+  const secondReady = loaded[1] && !errors[1];
+  const anyReady = firstReady || secondReady;
+
+  if (!images?.length || bothFailed) {
     return (
-      <div className={`${sizes[size]} ${className} rounded-xl bg-gray-100 flex items-center justify-center shrink-0`}>
+      <div className={`${SIZES[size]} ${className} rounded-xl bg-gray-100 flex items-center justify-center shrink-0`}>
         <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
         </svg>
@@ -38,33 +71,36 @@ export function ExerciseImage({ images, size = 'md', className = '', animate = f
   }
 
   return (
-    <div
-      className={`${sizes[size]} ${className} rounded-xl overflow-hidden bg-gray-100 shrink-0 relative cursor-pointer`}
-      onClick={() => !animate && images.length > 1 && setPlaying((p) => !p)}
-      title={!animate && images.length > 1 ? (playing ? 'Tap to pause' : 'Tap to preview') : undefined}
-    >
-      {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-primary-300 border-t-primary-600 rounded-full animate-spin" />
-        </div>
+    <div className={`${SIZES[size]} ${className} rounded-xl overflow-hidden bg-gray-100 shrink-0 relative`}>
+      {/* Skeleton */}
+      {!anyReady && (
+        <div className="absolute inset-0 bg-gray-100 animate-pulse" />
       )}
-      <img
-        key={`${frame}-${images[frame]}`}
-        src={images[frame]}
-        alt=""
-        onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
-        className={`w-full h-full object-cover transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-      />
-      {/* Play indicator when static and has animation */}
-      {!isAnimating && images.length > 1 && (
-        <div className="absolute inset-0 flex items-end justify-end p-1 pointer-events-none">
-          <div className="w-4 h-4 rounded-full bg-black/30 flex items-center justify-center">
-            <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
+
+      {/* Frame 0 */}
+      {srcs[0] && (
+        <img
+          src={srcs[0]}
+          alt=""
+          onLoad={() => setLoaded((l) => { const n = [...l]; n[0] = true; return n; })}
+          onError={() => handleError(0)}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+          style={{ opacity: anyReady ? (visible === 0 ? 1 : 0) : 0 }}
+          draggable={false}
+        />
+      )}
+
+      {/* Frame 1 */}
+      {srcs[1] && srcs[1] !== srcs[0] && (
+        <img
+          src={srcs[1]}
+          alt=""
+          onLoad={() => setLoaded((l) => { const n = [...l]; n[1] = true; return n; })}
+          onError={() => handleError(1)}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+          style={{ opacity: anyReady ? (visible === 1 ? 1 : 0) : 0 }}
+          draggable={false}
+        />
       )}
     </div>
   );

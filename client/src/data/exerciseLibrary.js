@@ -1,4 +1,4 @@
-const BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises';
+const BASE = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
 
 function imgs(folder) {
   return [`${BASE}/${folder}/0.jpg`, `${BASE}/${folder}/1.jpg`];
