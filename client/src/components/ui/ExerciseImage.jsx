@@ -5,6 +5,7 @@ const SIZES = {
   md: 'w-16 h-16',
   lg: 'w-32 h-32',
   xl: 'w-48 h-48',
+  full: 'w-full h-full',
 };
 
 export function ExerciseImage({ images, size = 'md', className = '', animate = false }) {

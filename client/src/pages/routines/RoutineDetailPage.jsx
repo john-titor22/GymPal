@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRoutineStore } from '../../store/routineStore';
 import { BodyDiagram } from '../../components/ui/BodyDiagram';
 import { ExerciseImage } from '../../components/ui/ExerciseImage';
+import { ExerciseDetailModal } from '../../components/ui/ExerciseDetailModal';
 import { EXERCISE_LIBRARY, MUSCLE_OPTIONS, EQUIPMENT_OPTIONS } from '../../data/exerciseLibrary';
 import { resizeImage } from '../../utils/imageResize';
 import { routinesApi } from '../../api/routines.api';
@@ -56,8 +57,7 @@ export function RoutineDetailPage() {
   const [filterMuscle, setFilterMuscle] = useState('');
   const [filterEquipment, setFilterEquipment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pickerSelected, setPickerSelected] = useState(null); // name of previewed exercise
-  const [animatingExercise, setAnimatingExercise] = useState(null); // id of animating routine exercise
+  const [detailExercise, setDetailExercise] = useState(null); // { name, muscleGroup, equipment, images }
   // { [exerciseId]: { setsData: [{reps, weight, type}], notes, restTimer } }
   const [localData, setLocalData] = useState({});
   const [openTypeMenu, setOpenTypeMenu] = useState(null); // `${exerciseId}-${setIndex}`
@@ -297,9 +297,9 @@ export function RoutineDetailPage() {
               {/* Exercise header */}
               <div
                 className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 rounded-t-2xl cursor-pointer"
-                onClick={() => setAnimatingExercise((p) => p === ex.id ? null : ex.id)}
+                onClick={() => setDetailExercise({ name: ex.name, muscleGroup: ex.muscleGroup, equipment: ex.equipment, images: IMG_MAP[ex.name] })}
               >
-                <ExerciseImage images={IMG_MAP[ex.name]} size="md" animate={animatingExercise === ex.id} />
+                <ExerciseImage images={IMG_MAP[ex.name]} size="md" animate={false} />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 truncate">{ex.name}</p>
                   <p className="text-xs text-gray-400">
@@ -454,6 +454,20 @@ export function RoutineDetailPage() {
         Add Exercise
       </button>
 
+      {/* Exercise detail modal */}
+      {detailExercise && (
+        <ExerciseDetailModal
+          exercise={detailExercise}
+          images={detailExercise.images}
+          onClose={() => setDetailExercise(null)}
+          onAdd={detailExercise._fromPicker ? async () => {
+            await handlePickExercise(detailExercise);
+            setDetailExercise(null);
+          } : undefined}
+          isAdding={isSubmitting}
+        />
+      )}
+
       {/* Exercise Picker drawer */}
       {showPicker && (
         <div className="fixed inset-0 z-50 flex">
@@ -485,31 +499,22 @@ export function RoutineDetailPage() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-              {filtered.map((ex) => {
-                const selected = pickerSelected === ex.name;
-                return (
-                  <div
-                    key={ex.name}
-                    className={`flex items-center gap-3 px-4 py-3 transition cursor-pointer ${selected ? 'bg-primary-50' : 'hover:bg-gray-50'}`}
-                    onClick={() => setPickerSelected(selected ? null : ex.name)}
-                  >
-                    <ExerciseImage images={ex.images} size="md" animate={selected} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{ex.name}</p>
-                      <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>
-                    </div>
-                    {selected && (
-                      <button
-                        disabled={isSubmitting}
-                        onClick={(e) => { e.stopPropagation(); handlePickExercise(ex); setPickerSelected(null); }}
-                        className="shrink-0 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition"
-                      >
-                        Add
-                      </button>
-                    )}
+              {filtered.map((ex) => (
+                <div
+                  key={ex.name}
+                  className="flex items-center gap-3 px-4 py-3 transition cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                  onClick={() => setDetailExercise({ name: ex.name, muscleGroup: ex.muscleGroup, equipment: ex.equipment, images: ex.images, _fromPicker: true })}
+                >
+                  <ExerciseImage images={ex.images} size="md" animate={false} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{ex.name}</p>
+                    <p className="text-xs text-gray-400">{MUSCLE_LABEL[ex.muscleGroup]}</p>
                   </div>
-                );
-              })}
+                  <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              ))}
               {filtered.length === 0 && (
                 <p className="text-center text-gray-400 text-sm py-8">No exercises found</p>
               )}
