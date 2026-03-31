@@ -16,6 +16,13 @@ import { SchedulePage } from './pages/schedule/SchedulePage';
 
 function PrivateRoute({ children }) {
   const { user, isLoading } = useAuthStore();
+
+  // We have a cached user — show the app immediately while the background
+  // refresh silently validates the session. If refresh fails, logout() fires
+  // and clears user, which triggers a re-render that redirects to /login.
+  if (user) return children;
+
+  // No cached user yet — wait for the initial refresh to complete
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -23,12 +30,13 @@ function PrivateRoute({ children }) {
       </div>
     );
   }
-  return user ? children : <Navigate to="/login" replace />;
+
+  return <Navigate to="/login" replace />;
 }
 
 function PublicRoute({ children }) {
   const { user, isLoading } = useAuthStore();
-  if (isLoading) return null;
+  if (isLoading && !user) return null;
   return user ? <Navigate to="/dashboard" replace /> : children;
 }
 
