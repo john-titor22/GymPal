@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -109,7 +110,7 @@ function DayModal({ date, entries, routines, onAdd, onRemove, onStart, onClose }
     weekday: 'long', month: 'long', day: 'numeric',
   });
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
@@ -221,8 +222,11 @@ function DayModal({ date, entries, routines, onAdd, onRemove, onStart, onClose }
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-5 pb-6 pt-3 border-t border-gray-100">
+        {/* Footer — pb accounts for the device home indicator / safe area */}
+        <div
+          className="px-5 pt-3 border-t border-gray-100"
+          style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           {adding ? (
             <button
               onClick={() => setAdding(false)}
@@ -240,7 +244,8 @@ function DayModal({ date, entries, routines, onAdd, onRemove, onStart, onClose }
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
